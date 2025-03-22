@@ -1,4 +1,4 @@
-use crate::utils::{get_bit, get_hi, get_lo, set_hi, set_lo};
+use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
 
 /// Registers module
@@ -119,6 +119,22 @@ impl Registers {
         set_lo(&mut self.af, value);
     }
 
+    fn set_zero_flag(&mut self, value: u8) {
+        set_bit(&mut self.af, 7, value);
+    }
+
+    fn set_substraction_flag(&mut self, value: u8) {
+        set_bit(&mut self.af, 6, value);
+    }
+
+    fn set_half_carry_flag(&mut self, value: u8) {
+        set_bit(&mut self.af, 5, value);
+    }
+
+    fn set_carry_flag(&mut self, value: u8) {
+        set_bit(&mut self.af, 4, value);
+    }
+    
     fn set_b(&mut self, value: u8) {
         set_hi(&mut self.bc, value);
     }
@@ -270,6 +286,46 @@ mod tests {
         assert_eq!(registers.get_e(), e);
         assert_eq!(registers.get_h(), h);
         assert_eq!(registers.get_l(), l);
+    }
+
+    #[test]
+    fn test_getters_flags() {
+        let af = 0b1101_1010_1010_1010;
+        let registers = Registers {
+            af,
+            bc: 0,
+            de: 0,
+            hl: 0,
+            sp: 0,
+            pc: 0
+        };
+
+        assert_eq!(registers.get_zero_flag(), 1);
+        assert_eq!(registers.get_substraction_flag(), 0);
+        assert_eq!(registers.get_half_carry_flag(), 1);
+        assert_eq!(registers.get_carry_flag(), 0);
+    }
+
+    #[test]
+    fn test_setters_flags() {
+        let mut registers = Registers {
+            af: 0,
+            bc: 0,
+            de: 0,
+            hl: 0,
+            sp: 0,
+            pc: 0
+        };
+
+        registers.set_zero_flag(1);
+        registers.set_substraction_flag(0);
+        registers.set_half_carry_flag(1);
+        registers.set_carry_flag(0);
+
+        assert_eq!(registers.get_zero_flag(), 1);
+        assert_eq!(registers.get_substraction_flag(), 0);
+        assert_eq!(registers.get_half_carry_flag(), 1);
+        assert_eq!(registers.get_carry_flag(), 0);
     }
 }
 
