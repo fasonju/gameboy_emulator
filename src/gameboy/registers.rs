@@ -1,9 +1,9 @@
-use crate::utils::{get_hi, get_lo, set_hi, set_lo};
+use crate::utils::{get_bit, get_hi, get_lo, set_hi, set_lo};
 
 
 /// Registers module
 pub struct Registers {
-    af: u16,
+    af: u16, // f is flags
     bc: u16,
     de: u16,
     hl: u16,
@@ -69,6 +69,22 @@ impl Registers {
 
     fn get_flags(&self) -> u8 {
         get_lo(self.af)
+    }
+
+    fn get_zero_flag(&self) -> u8 {
+        get_bit(self.af, 7)
+    }
+
+    fn get_substraction_flag(&self) -> u8 {
+        get_bit(self.af, 6)
+    }
+
+    fn get_half_carry_flag(&self) -> u8 {
+        get_bit(self.af, 5)
+    }
+
+    fn get_carry_flag(&self) -> u8 {
+        get_bit(self.af, 4)
     }
 
     fn get_b(&self) -> u8 {

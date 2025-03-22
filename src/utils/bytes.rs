@@ -26,6 +26,19 @@ pub fn get_bit(n: u16, index: u8) -> u8 {
     (n >> index) as u8 & 1
 }
 
+/// Indexed from right to left
+/// set the bit at the given index
+pub fn set_bit(n: &mut u16, index: u8, value: u8) {
+    assert!(index < 16);
+    assert!(value == 0 || value == 1);
+
+    if value == 1 {
+        *n |= 1 << index;
+    } else {
+        *n &= !(1 << index);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,6 +73,15 @@ mod tests {
         assert_eq!(get_bit(0b1010, 1), 1);
         assert_eq!(get_bit(0b1010, 2), 0);
         assert_eq!(get_bit(0b1010, 3), 1);
+    }
+
+    #[test]
+    fn test_set_bit() {
+        let mut n = 0b1010;
+        set_bit(&mut n, 0, 1);
+        assert_eq!(n, 0b1011);
+        set_bit(&mut n, 0, 0);
+        assert_eq!(n, 0b1010);
     }
 
     #[test]
