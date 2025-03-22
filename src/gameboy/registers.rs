@@ -67,7 +67,7 @@ impl Registers {
         get_hi(self.af)
     }   
 
-    fn get_f(&self) -> u8 {
+    fn get_flags(&self) -> u8 {
         get_lo(self.af)
     }
 
@@ -99,7 +99,7 @@ impl Registers {
         set_hi(&mut self.af, value);
     }
 
-    fn set_f(&mut self, value: u8) {
+    fn set_flags(&mut self, value: u8) {
         set_lo(&mut self.af, value);
     }
 
@@ -175,7 +175,7 @@ mod tests {
             pc
         };
         assert_eq!(registers.get_a(), get_hi(af));
-        assert_eq!(registers.get_f(), get_lo(af));
+        assert_eq!(registers.get_flags(), get_lo(af));
         assert_eq!(registers.get_b(), get_hi(bc));
         assert_eq!(registers.get_c(), get_lo(bc));
         assert_eq!(registers.get_d(), get_hi(de));
@@ -238,7 +238,7 @@ mod tests {
         let l = 0xBC;
 
         registers.set_a(a);
-        registers.set_f(f);
+        registers.set_flags(f);
         registers.set_b(b);
         registers.set_c(c);
         registers.set_d(d);
@@ -247,7 +247,7 @@ mod tests {
         registers.set_l(l);
 
         assert_eq!(registers.get_a(), a);
-        assert_eq!(registers.get_f(), f);
+        assert_eq!(registers.get_flags(), f);
         assert_eq!(registers.get_b(), b);
         assert_eq!(registers.get_c(), c);
         assert_eq!(registers.get_d(), d);

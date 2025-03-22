@@ -19,6 +19,13 @@ pub fn combine(hi: u8, lo: u8) -> u16 {
     ((hi as u16) << 8) | lo as u16
 }
 
+/// indexed from right to left
+pub fn get_bit(n: u16, index: u8) -> u8 {
+    assert!(index < 16);
+
+    (n >> index) as u8 & 1
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -45,6 +52,14 @@ mod tests {
         let mut n = 0xABCD;
         set_hi(&mut n, 0xEF);
         assert_eq!(n, 0xEFCD);
+    }
+
+    #[test]
+    fn test_get_bit() {
+        assert_eq!(get_bit(0b1010, 0), 0);
+        assert_eq!(get_bit(0b1010, 1), 1);
+        assert_eq!(get_bit(0b1010, 2), 0);
+        assert_eq!(get_bit(0b1010, 3), 1);
     }
 
     #[test]
