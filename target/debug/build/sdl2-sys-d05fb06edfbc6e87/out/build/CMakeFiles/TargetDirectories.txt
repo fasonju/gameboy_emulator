@@ -1,0 +1,11 @@
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/sdl_headers_copy.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/SDL2main.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/SDL2.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/SDL2_test.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/uninstall.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/edit_cache.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/rebuild_cache.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/list_install_components.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/install.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/install/local.dir
+/Users/jasonfu/Projects/gameboy_emulator/target/debug/build/sdl2-sys-d05fb06edfbc6e87/out/build/CMakeFiles/install/strip.dir
