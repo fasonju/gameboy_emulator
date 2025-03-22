@@ -114,7 +114,7 @@ impl Memory {
         }
     }
 
-    pub fn write(&mut self, adress: u16, value: u8) {
+    pub fn write(&self, adress: u16, value: u8) {
         let adress_as_index = adress as usize;
         match adress_as_index {
             ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START] = value,
@@ -132,7 +132,7 @@ impl Memory {
         }
     }
 
-    pub fn write_block(&mut self, adress: u16, block: &[u8]) {
+    pub fn write_block(&self, adress: u16, block: &[u8]) {
         let adress_as_index = adress as usize;
         match adress_as_index {
             ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START..adress_as_index - ROM_00_START + block.len()].copy_from_slice(block),
