@@ -1,3 +1,5 @@
 mod cpu;
-mod ram;
+mod memory;
 mod registers;
+
+pub use cpu::Cpu;

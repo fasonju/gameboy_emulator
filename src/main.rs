@@ -2,5 +2,7 @@ mod utils;
 mod gameboy;
 
 fn main() {
-    println!("Hello, world!");
+    let cpu = gameboy::Cpu::new();
+
+    println!("AF: {:04X}", cpu.get_af());
 }

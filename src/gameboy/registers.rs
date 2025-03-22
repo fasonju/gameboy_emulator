@@ -12,150 +12,160 @@ pub struct Registers {
 }
 
 impl Registers {    
-    // Registers for two bytes at once
+    /// Create a new Registers object
+    pub fn new(af: u16, bc: u16, de: u16, hl: u16, sp: u16, pc: u16) -> Registers {
+        Registers {
+            af,
+            bc,
+            de,
+            hl,
+            sp,
+            pc
+        }
+    }
 
-    fn get_af(&self) -> u16 {
+    pub fn get_af(&self) -> u16 {
         self.af
     }
 
-    fn get_bc(&self) -> u16 {
+    pub fn get_bc(&self) -> u16 {
         self.bc
     }
 
-    fn get_de(&self) -> u16 {
+    pub fn get_de(&self) -> u16 {
         self.de
     }
 
-    fn get_hl(&self) -> u16 {
+    pub fn get_hl(&self) -> u16 {
         self.hl
     }
 
-    fn get_sp(&self) -> u16 {
+    pub fn get_sp(&self) -> u16 {
         self.sp
     }
 
-    fn get_pc(&self) -> u16 {
+    pub fn get_pc(&self) -> u16 {
         self.pc
     }
 
-    fn set_af(&mut self, value: u16) {
+    pub fn set_af(&mut self, value: u16) {
         self.af = value;
     }
 
-    fn set_bc(&mut self, value: u16) {
+    pub fn set_bc(&mut self, value: u16) {
         self.bc = value;
     }
 
-    fn set_de(&mut self, value: u16) {
+    pub fn set_de(&mut self, value: u16) {
         self.de = value;
     }
 
-    fn set_hl(&mut self, value: u16) {
+    pub fn set_hl(&mut self, value: u16) {
         self.hl = value;
     }
 
-    fn set_sp(&mut self, value: u16) {
+    pub fn set_sp(&mut self, value: u16) {
         self.sp = value;
     }
 
-    fn set_pc(&mut self, value: u16) {
+    pub fn set_pc(&mut self, value: u16) {
         self.pc = value;
     }
 
     // Registers for one byte at a time
-    fn get_a(&self) -> u8 {
+    pub fn get_a(&self) -> u8 {
         get_hi(self.af)
     }   
 
-    fn get_flags(&self) -> u8 {
+    pub fn get_flags(&self) -> u8 {
         get_lo(self.af)
     }
 
-    fn get_zero_flag(&self) -> u8 {
+    pub fn get_zero_flag(&self) -> u8 {
         get_bit(self.af, 7)
     }
 
-    fn get_substraction_flag(&self) -> u8 {
+    pub fn get_substraction_flag(&self) -> u8 {
         get_bit(self.af, 6)
     }
 
-    fn get_half_carry_flag(&self) -> u8 {
+    pub fn get_half_carry_flag(&self) -> u8 {
         get_bit(self.af, 5)
     }
 
-    fn get_carry_flag(&self) -> u8 {
+    pub fn get_carry_flag(&self) -> u8 {
         get_bit(self.af, 4)
     }
 
-    fn get_b(&self) -> u8 {
+    pub fn get_b(&self) -> u8 {
         get_hi(self.bc)
     }
 
-    fn get_c(&self) -> u8 {
+    pub fn get_c(&self) -> u8 {
         get_lo(self.bc)
     }
 
-    fn get_d(&self) -> u8 {
+    pub fn get_d(&self) -> u8 {
         get_hi(self.de)
     }
 
-    fn get_e(&self) -> u8 {
+    pub fn get_e(&self) -> u8 {
         get_lo(self.de)
     }
 
-    fn get_h(&self) -> u8 {
+    pub fn get_h(&self) -> u8 {
         get_hi(self.hl)
     }
 
-    fn get_l(&self) -> u8 {
+    pub fn get_l(&self) -> u8 {
         get_lo(self.hl)
     }
 
-    fn set_a(&mut self, value: u8) {
+    pub fn set_a(&mut self, value: u8) {
         set_hi(&mut self.af, value);
     }
 
-    fn set_flags(&mut self, value: u8) {
+    pub fn set_flags(&mut self, value: u8) {
         set_lo(&mut self.af, value);
     }
 
-    fn set_zero_flag(&mut self, value: u8) {
+    pub fn set_zero_flag(&mut self, value: u8) {
         set_bit(&mut self.af, 7, value);
     }
 
-    fn set_substraction_flag(&mut self, value: u8) {
+    pub fn set_substraction_flag(&mut self, value: u8) {
         set_bit(&mut self.af, 6, value);
     }
 
-    fn set_half_carry_flag(&mut self, value: u8) {
+    pub fn set_half_carry_flag(&mut self, value: u8) {
         set_bit(&mut self.af, 5, value);
     }
 
-    fn set_carry_flag(&mut self, value: u8) {
+    pub fn set_carry_flag(&mut self, value: u8) {
         set_bit(&mut self.af, 4, value);
     }
     
-    fn set_b(&mut self, value: u8) {
+    pub fn set_b(&mut self, value: u8) {
         set_hi(&mut self.bc, value);
     }
 
-    fn set_c(&mut self, value: u8) {
+    pub fn set_c(&mut self, value: u8) {
         set_lo(&mut self.bc, value);
     }
 
-    fn set_d(&mut self, value: u8) {
+    pub fn set_d(&mut self, value: u8) {
         set_hi(&mut self.de, value);
     }
 
-    fn set_e(&mut self, value: u8) {
+    pub fn set_e(&mut self, value: u8) {
         set_lo(&mut self.de, value);
     }
 
-    fn set_h(&mut self, value: u8) {
+    pub fn set_h(&mut self, value: u8) {
         set_hi(&mut self.hl, value);
     }
 
-    fn set_l(&mut self, value: u8) {
+    pub fn set_l(&mut self, value: u8) {
         set_lo(&mut self.hl, value);
     }
 }
