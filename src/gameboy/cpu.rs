@@ -11,8 +11,8 @@ const STARTUP_PC: u16 = 0x0;
 
 
 pub struct Cpu<'a> {
-    registers: Registers,
-    memory: &'a Memory
+    pub registers: Registers,
+    pub memory: &'a Memory
 }
 
 impl<'a> Cpu<'a> {

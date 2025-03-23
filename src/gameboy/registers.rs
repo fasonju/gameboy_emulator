@@ -1,5 +1,6 @@
 use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
+#[derive(Debug, Copy, Clone)]
 pub enum Register8 {
     A,
     B,
@@ -11,6 +12,7 @@ pub enum Register8 {
     F, // Flags register
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum Register16 {
     AF,
     BC,
@@ -20,6 +22,7 @@ pub enum Register16 {
     PC, // Program Counter
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum Flag {
     Zero,
     Substraction,
