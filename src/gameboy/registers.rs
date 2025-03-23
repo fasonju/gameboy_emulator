@@ -1,7 +1,24 @@
 use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
-use super::cpu::{Register16, Register8};
+pub enum Register8 {
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    F, // Flags register
+}
 
+pub enum Register16 {
+    AF,
+    BC,
+    DE,
+    HL,
+    SP, // Stack Pointer
+    PC, // Program Counter
+}
 
 /// Registers module
 pub struct Registers {

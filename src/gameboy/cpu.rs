@@ -1,5 +1,5 @@
 
-use super::{ memory::Memory, registers::Registers};
+use super::{ memory::Memory, registers::{Register16, Registers}};
 
 const STARTUP_AF: u16 = 0x0;
 const STARTUP_BC: u16 = 0x0;
@@ -8,25 +8,7 @@ const STARTUP_HL: u16 = 0x0;
 const STARTUP_SP: u16 = 0x0;
 const STARTUP_PC: u16 = 0x0;
 
-pub enum Register8 {
-    A,
-    B,
-    C,
-    D,
-    E,
-    H,
-    L,
-    F, // Flags register
-}
 
-pub enum Register16 {
-    AF,
-    BC,
-    DE,
-    HL,
-    SP, // Stack Pointer
-    PC, // Program Counter
-}
 
 pub struct Cpu<'a> {
     registers: Registers,

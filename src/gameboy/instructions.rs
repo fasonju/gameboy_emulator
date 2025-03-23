@@ -1,4 +1,5 @@
-use super::cpu::{Register16, Register8};
+use super::registers::{Register16, Register8};
+
 
 // A generic instruction for 8-bit registers
 pub enum Instruction {
