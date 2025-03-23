@@ -131,16 +131,15 @@ impl Instruction {
     pub fn execute(&self, cpu: &mut Cpu) -> u8 {
         match self {
             Instruction::LdR8FromR8(target, source) => {
-                let value = cpu.registers.get_register_8(*source);
-                load_value_to_register8(*target, value, cpu);
+                load_register8_to_register8(*target, *source, cpu);
                 1
             },
             Instruction::LdR8FromN8(target, value) => { 
-                load_value_to_register8(*target, *value, cpu);
+                cpu.registers.set_register_8(*target, *value);
                 2
             },
             Instruction::LdR16FromN16(target, value) => {
-                load_value_to_register16(*target, *value, cpu);
+                cpu.registers.set_register_16(*target, *value);
                 3
             },
             Instruction::LdMemHlFromR8(register8) => {
@@ -250,12 +249,10 @@ impl Instruction {
         }
     }
 }
-fn load_value_to_register8(target: Register8, value: u8, cpu: &mut Cpu) {
-    cpu.registers.set_register_8(target, value);
-}
 
-fn load_value_to_register16(target: Register16, value: u16, cpu: &mut Cpu) {
-    cpu.registers.set_register_16(target, value);
+fn load_register8_to_register8(target: Register8, source: Register8, cpu: &mut Cpu) {
+    let value = cpu.registers.get_register_8(source);
+    cpu.registers.set_register_8(target, value);
 }
 
 fn load_register8_to_memory(source: Register8, adress: u16, cpu: &mut Cpu) {
@@ -270,25 +267,15 @@ mod tests {
     use crate::gameboy::{registers::{Register16, Register8}, Memory};
 
     #[test]
-    fn test_load_value_to_register8() {
+    fn test_load_register8_to_register8() {
         let memory = Memory::new();
         let mut cpu = Cpu::new(&memory);
         cpu.registers.set_register_8(Register8::A, 0x12);
+        cpu.registers.set_register_8(Register8::B, 0x34);
 
-        load_value_to_register8(Register8::A, 0x34, &mut cpu);
+        load_register8_to_register8(Register8::A, Register8::B, &mut cpu);
 
         assert_eq!(cpu.registers.get_register_8(Register8::A), 0x34);
-    }
-
-    #[test]
-    fn test_load_value_to_register16() {
-        let memory = Memory::new();
-        let mut cpu = Cpu::new(&memory);
-        cpu.registers.set_register_16(Register16::BC, 0x1234);
-
-        load_value_to_register16(Register16::BC, 0x5678, &mut cpu);
-
-        assert_eq!(cpu.registers.get_register_16(Register16::BC), 0x5678);
     }
 
     #[test]
