@@ -20,6 +20,13 @@ pub enum Register16 {
     PC, // Program Counter
 }
 
+pub enum Flag {
+    Zero,
+    Substraction,
+    HalfCarry,
+    Carry,
+}
+
 /// Registers module
 pub struct Registers {
     af: u16, // f is flags
@@ -91,36 +98,22 @@ impl Registers {
         }
     }
 
-    pub fn get_zero_flag(&self) -> u8 {
-        get_bit(self.af, 7)
+    pub fn get_flag(&self, flag: Flag) -> u8 {
+        match flag {
+            Flag::Zero => get_bit(self.get_register_8(Register8::F) as u16, 7),
+            Flag::Substraction => get_bit(self.get_register_8(Register8::F) as u16, 6),
+            Flag::HalfCarry => get_bit(self.get_register_8(Register8::F) as u16, 5),
+            Flag::Carry => get_bit(self.get_register_8(Register8::F) as u16, 4),
+        }
     }
 
-    pub fn get_substraction_flag(&self) -> u8 {
-        get_bit(self.af, 6)
-    }
-
-    pub fn get_half_carry_flag(&self) -> u8 {
-        get_bit(self.af, 5)
-    }
-
-    pub fn get_carry_flag(&self) -> u8 {
-        get_bit(self.af, 4)
-    }
-
-    pub fn set_zero_flag(&mut self, value: u8) {
-        set_bit(&mut self.af, 7, value);
-    }
-
-    pub fn set_substraction_flag(&mut self, value: u8) {
-        set_bit(&mut self.af, 6, value);
-    }
-
-    pub fn set_half_carry_flag(&mut self, value: u8) {
-        set_bit(&mut self.af, 5, value);
-    }
-
-    pub fn set_carry_flag(&mut self, value: u8) {
-        set_bit(&mut self.af, 4, value);
+    pub fn set_flag(&mut self, flag: Flag, value: u8) {
+        match flag {
+            Flag::Zero => set_bit(&mut self.af, 7, value),
+            Flag::Substraction => set_bit(&mut self.af, 6, value),
+            Flag::HalfCarry => set_bit(&mut self.af, 5, value),
+            Flag::Carry => set_bit(&mut self.af, 4, value),
+        }
     }
 
 }
@@ -259,10 +252,10 @@ mod tests {
             pc: 0
         };
 
-        assert_eq!(registers.get_zero_flag(), 1);
-        assert_eq!(registers.get_substraction_flag(), 0);
-        assert_eq!(registers.get_half_carry_flag(), 1);
-        assert_eq!(registers.get_carry_flag(), 0);
+        assert_eq!(registers.get_flag(Flag::Zero), 1);
+        assert_eq!(registers.get_flag(Flag::Substraction), 0);
+        assert_eq!(registers.get_flag(Flag::HalfCarry), 1);
+        assert_eq!(registers.get_flag(Flag::Carry), 0);
     }
 
     #[test]
@@ -276,15 +269,15 @@ mod tests {
             pc: 0
         };
 
-        registers.set_zero_flag(1);
-        registers.set_substraction_flag(0);
-        registers.set_half_carry_flag(1);
-        registers.set_carry_flag(0);
+        registers.set_flag(Flag::Zero, 1);
+        registers.set_flag(Flag::Substraction, 0);
+        registers.set_flag(Flag::HalfCarry, 1);
+        registers.set_flag(Flag::Carry, 0);
 
-        assert_eq!(registers.get_zero_flag(), 1);
-        assert_eq!(registers.get_substraction_flag(), 0);
-        assert_eq!(registers.get_half_carry_flag(), 1);
-        assert_eq!(registers.get_carry_flag(), 0);
+        assert_eq!(registers.get_flag(Flag::Zero), 1);
+        assert_eq!(registers.get_flag(Flag::Substraction), 0);
+        assert_eq!(registers.get_flag(Flag::HalfCarry), 1);
+        assert_eq!(registers.get_flag(Flag::Carry), 0);
     }
 }
 
