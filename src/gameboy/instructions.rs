@@ -1,5 +1,5 @@
 
-use super::{instruction_variables::{Condition, R16, R16MEM, R16STK, R8, B3}, Cpu};
+use super::{instruction_variables::{Cond, R16, R16MEM, R16STK, R8, B3}, Cpu};
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
@@ -28,7 +28,7 @@ pub enum Instruction {
     Ccf,
 
     JrImm8(u8),
-    JrCondImm8(Condition, u8),
+    JrCondImm8(Cond, u8),
 
     Stop,
 
@@ -57,13 +57,13 @@ pub enum Instruction {
     OrAImm8(u8),
     CpAImm8(u8),
 
-    RetCond(Condition),
+    RetCond(Cond),
     Ret,
     Reti,
-    JpCondImm16(Condition, u16),
+    JpCondImm16(Cond, u16),
     JpImm16(u16),
     JpHl,
-    CallCondImm16(Condition, u16),
+    CallCondImm16(Cond, u16),
     CallImm16(u16),
     RstTgt3(B3),
 

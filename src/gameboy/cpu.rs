@@ -1,5 +1,5 @@
 
-use super::{instruction_variables::{R16, R16MEM, R8}, instructions::Instruction, memory::Memory, registers::Registers};
+use super::{instruction_variables::{Cond, R16, R16MEM, R8}, instructions::Instruction, memory::Memory, registers::Registers};
 
 const STARTUP_AF: u16 = 0x0;
 const STARTUP_BC: u16 = 0x0;
@@ -39,12 +39,12 @@ impl<'a> Cpu<'a> {
         // opcode == xxyyzzzz == xxaaabbb == iiijjbbb
         let opcode = self.fetch_byte(); 
     
-        let xx = opcode >> 7;
+        let xx = opcode >> 6;
         let yy = (opcode >> 4) & 0x3;
         let zzzz = opcode & 0xF;
         let aaa = (opcode >> 3) & 0x7;
         let bbb = opcode & 0x7;
-        let iii = (opcode >> 6) & 0x7;
+        let iii = (opcode >> 5) & 0x7;
         let jj = (opcode >> 3) & 0x3;
         
         // matching any one of the three tuples is enough to match the instruction, avoid mixing usage
@@ -74,13 +74,12 @@ impl<'a> Cpu<'a> {
             ((0x0, 0x3, 0x7), _, _) => Instruction::Scf,
             ((0x0, 0x3, 0xF), _, _) => Instruction::Ccf,
 
-            
+            (_, _, (0x0, 0x3, 0x0)) => Instruction::JrImm8(self.fetch_byte()),
+            (_, _, (0x1, _, 0x0)) => Instruction::JrCondImm8(Cond::from(jj), self.fetch_byte()),
 
+            ((0x0, 0x1, 0x0), _, _) => Instruction::Stop,
 
-
-
-
-            _ => panic!("Unknown instruction")
+            _ => panic!("Unknown instruction: {:#04X}", opcode)
 
         }
     }
@@ -155,5 +154,16 @@ mod tests {
 
         cpu.memory.write_byte(23, 0x3F);
         assert_eq!(cpu.fetch_instruction(), Instruction::Ccf);
+
+        cpu.memory.write_byte(24, 0x18);
+        cpu.memory.write_byte(25, 0x12);
+        assert_eq!(cpu.fetch_instruction(), Instruction::JrImm8(0x12));
+
+        cpu.memory.write_byte(26, 0x20);
+        cpu.memory.write_byte(27, 0x10);
+        assert_eq!(cpu.fetch_instruction(), Instruction::JrCondImm8(Cond::NotZero, 0x10));
+
+        cpu.memory.write_byte(28, 0x10);
+        assert_eq!(cpu.fetch_instruction(), Instruction::Stop);
     }
 }

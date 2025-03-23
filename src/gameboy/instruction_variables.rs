@@ -87,11 +87,23 @@ pub enum B3 {
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
-pub enum Condition {
+pub enum Cond {
     Zero,
     NotZero,
     Carry,
     NotCarry,
+}
+
+impl From<u8> for Cond {
+    fn from(c: u8) -> Cond {
+        match c {
+            0 => Cond::NotZero,
+            1 => Cond::Zero,
+            2 => Cond::NotCarry,
+            3 => Cond::Carry,
+            _ => panic!("Invalid condition")
+        }
+    }
 }
 
 
