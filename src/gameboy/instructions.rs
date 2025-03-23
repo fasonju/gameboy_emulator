@@ -1,22 +1,21 @@
 
 use super::{instruction_variables::{Condition, R16, R16MEM, R16STK, R8, B3}, Cpu};
 
-
-// A generic instruction for 8-bit registers
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
     // Block 0
     Nop,
     LdR16Imm16(R16, u16),
     LdR16MemA(R16MEM),
     LdAR16Mem(R16MEM),
-    LdImm16MemSP(u16),
+    LdMemImm16MemSP(u16),
 
     IncR16(R16),
     DecR16(R16),
     AddHlR16(R16),
 
     IncR8(R8),
-    DecMemHl(R8),
+    DecR8(R8),
     LdR8Imm8(R8, u8),
     
     Rlca,
@@ -112,12 +111,12 @@ impl Instruction {
             Instruction::LdR16Imm16(register16, _) => todo!(),
             Instruction::LdR16MemA(register16_mem) => todo!(),
             Instruction::LdAR16Mem(register16_mem) => todo!(),
-            Instruction::LdImm16MemSP(_) => todo!(),
+            Instruction::LdMemImm16MemSP(_) => todo!(),
             Instruction::IncR16(register16) => todo!(),
             Instruction::DecR16(register16) => todo!(),
             Instruction::AddHlR16(register16) => todo!(),
             Instruction::IncR8(register8) => todo!(),
-            Instruction::DecMemHl(register8) => todo!(),
+            Instruction::DecR8(register8) => todo!(),
             Instruction::LdR8Imm8(register8, _) => todo!(),
             Instruction::Rlca => todo!(),
             Instruction::Rrca => todo!(),
