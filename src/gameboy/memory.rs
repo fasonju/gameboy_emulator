@@ -47,8 +47,6 @@ const IE_START: usize = 0xFFFF;
 const IE_END: usize = 0xFFFF;
 const IE_SIZE: usize = IE_END - IE_START + 1;
 
-
-
 pub struct Memory {
     rom_00: Mutex<[u8; ROM_00_SIZE]>,
     rom_nn: Mutex<[u8; ROM_NN_SIZE]>,

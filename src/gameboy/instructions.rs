@@ -1,3 +1,6 @@
+
+use crate::utils::{carry_u8_add, half_carry_u8_add};
+
 use super::{registers::{Flag, Register16, Register8}, Cpu};
 
 
@@ -336,7 +339,22 @@ impl Instruction {
             },
 
             // Arithmetic instructions
-            Instruction::AdcR8(register8) => todo!(),
+            Instruction::AdcR8(register) => {
+                let left = cpu.registers.get_register_8(Register8::A);
+                let right = cpu.registers.get_flag(Flag::Carry)
+                    .wrapping_add(cpu.registers.get_register_8(*register));
+
+                let result = left.wrapping_add(right);
+                
+                let z: u8 = if result == 0 { 1 } else { 0 };
+                let n: u8 = 0;
+                let h: u8 = half_carry_u8_add(left, right);
+                let c: u8 = carry_u8_add(left, right);
+
+                cpu.registers.set_flags(Some(z), Some(n), Some(h), Some(c));
+                cpu.registers.set_register_8(Register8::A, result);
+                1
+            },
             Instruction::AdcMemHl => todo!(),
             Instruction::AdcN8(n) => todo!(),
             Instruction::AddR8(register8) => todo!(),
@@ -732,5 +750,121 @@ mod tests {
         assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.get_register_8(Register8::A), 0x12);
         assert_eq!(cpu.registers.get_register_16(Register16::HL), 0x1233);
+    }
+
+    #[test]
+    fn test_adc_r8_no_carry() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0x12);
+        cpu.registers.set_register_8(Register8::B, 0x34);
+
+        let instruction = Instruction::AdcR8(Register8::B);
+        let flag = cpu.registers.get_flag(Flag::Carry);
+        let cycles = instruction.execute(&mut cpu);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 0);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x46);
+    }
+
+    #[test]
+    fn test_adc_r8_with_carry_register() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0xFF);
+        cpu.registers.set_register_8(Register8::B, 0x01);
+        cpu.registers.set_flags(None, None, None, None);
+
+        let instruction = Instruction::AdcR8(Register8::B);
+        let flag = cpu.registers.get_flag(Flag::Carry);
+        let cycles = instruction.execute(&mut cpu);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 0);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x0);
+    }
+
+    #[test]
+    fn test_adc_r8_with_carry_flag() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0xFF);
+        cpu.registers.set_register_8(Register8::B, 0x0);
+        cpu.registers.set_flags(None, None, None, Some(1));
+
+        let instruction = Instruction::AdcR8(Register8::B);
+        let flag = cpu.registers.get_flag(Flag::Carry);
+        let cycles = instruction.execute(&mut cpu);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 1);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x00);
+    }
+
+    fn test_adc_r8_half_carry_register() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0x0F);
+        cpu.registers.set_register_8(Register8::B, 0x01);
+        cpu.registers.set_flags(None, None, None, None);
+
+        let instruction = Instruction::AdcR8(Register8::B);
+        let flag = cpu.registers.get_flag(Flag::HalfCarry);
+        let cycles = instruction.execute(&mut cpu);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 1);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x10);
+    }
+
+    #[test]
+    fn test_adc_r8_half_carry_flag() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0x0F);
+        cpu.registers.set_register_8(Register8::B, 0x01);
+        cpu.registers.set_flags(None, None, None, None);
+        let instruction = Instruction::AdcR8(Register8::B);
+
+        let cycles = instruction.execute(&mut cpu);
+        let flag = cpu.registers.get_flag(Flag::HalfCarry);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 1);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x10);
+    }
+
+    fn test_adc_r8_zero() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0xFF);
+        cpu.registers.set_register_8(Register8::B, 0x01);
+        cpu.registers.set_flags(None, None, None, None);
+
+        let instruction = Instruction::AdcR8(Register8::B);
+        let cycles = instruction.execute(&mut cpu);
+        let flag = cpu.registers.get_flag(Flag::Zero);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 1);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x00);
+    }
+
+    #[test]
+    fn test_adc_r8_non_zero() {
+        let memory = Memory::new();
+        let mut cpu = Cpu::new(&memory);
+        cpu.registers.set_register_8(Register8::A, 0x12);
+        cpu.registers.set_register_8(Register8::B, 0x34);
+        cpu.registers.set_flags(None, None, None, None);
+
+        let instruction = Instruction::AdcR8(Register8::B);
+        let cycles = instruction.execute(&mut cpu);
+        let flag = cpu.registers.get_flag(Flag::Zero);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(flag, 0);
+        assert_eq!(cpu.registers.get_register_8(Register8::A), 0x46);
     }
 }

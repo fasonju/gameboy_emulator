@@ -119,6 +119,16 @@ impl Registers {
         }
     }
 
+    pub fn set_flags(&mut self, zero: Option<u8>, subtraction: Option<u8>, half_carry: Option<u8>, carry: Option<u8>) {
+        let z = if let Some(z) = zero { z } else { self.get_flag(Flag::Zero) };
+        let s = if let Some(s) = subtraction { s } else { self.get_flag(Flag::Substraction) };
+        let h = if let Some(h) = half_carry { h } else { self.get_flag(Flag::HalfCarry) };
+        let c = if let Some(c) = carry { c } else { self.get_flag(Flag::Carry) };
+
+        let byte = (z << 7) | (s << 6) | (h << 5) | (c << 4); // build flag byte
+        self.set_register_8(Register8::F, byte);
+    }
+
 }
 
 #[cfg(test)]
@@ -276,6 +286,44 @@ mod tests {
         registers.set_flag(Flag::Substraction, 0);
         registers.set_flag(Flag::HalfCarry, 1);
         registers.set_flag(Flag::Carry, 0);
+
+        assert_eq!(registers.get_flag(Flag::Zero), 1);
+        assert_eq!(registers.get_flag(Flag::Substraction), 0);
+        assert_eq!(registers.get_flag(Flag::HalfCarry), 1);
+        assert_eq!(registers.get_flag(Flag::Carry), 0);
+    }
+
+    #[test]
+    fn test_set_flags() {
+        let mut registers = Registers {
+            af: 0,
+            bc: 0,
+            de: 0,
+            hl: 0,
+            sp: 0,
+            pc: 0
+        };
+
+        registers.set_flags(Some(1), Some(0), Some(1), Some(0));
+
+        assert_eq!(registers.get_flag(Flag::Zero), 1);
+        assert_eq!(registers.get_flag(Flag::Substraction), 0);
+        assert_eq!(registers.get_flag(Flag::HalfCarry), 1);
+        assert_eq!(registers.get_flag(Flag::Carry), 0);
+    }
+
+    #[test]
+    fn test_set_flags_none() {
+        let mut registers = Registers {
+            af: 0b1101_1010_1010_1010,
+            bc: 0,
+            de: 0,
+            hl: 0,
+            sp: 0,
+            pc: 0
+        };
+
+        registers.set_flags(None, None, None, None);
 
         assert_eq!(registers.get_flag(Flag::Zero), 1);
         assert_eq!(registers.get_flag(Flag::Substraction), 0);

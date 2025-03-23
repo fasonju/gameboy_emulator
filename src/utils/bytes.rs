@@ -43,6 +43,39 @@ pub fn set_bit(n: &mut u16, index: u8, value: u8) {
     }
 }
 
+pub fn half_carry_u8_add(left: u8, right: u8) -> u8 {
+    if (left & 0xF) + (right & 0xF) > 0xF {
+        1
+    } else {
+        0
+    }
+}
+
+pub fn carry_u8_add(left: u8, right: u8) -> u8 {
+    if (left as u16) + (right as u16) > 0xFF {
+        1
+    } else {
+        0
+    }
+}
+
+pub fn carry_u16_add(left: u16, right: u16) -> u16 {
+    if (left as u32) + (right as u32) > 0xFFFF {
+        1
+    } else {
+        0
+    }
+}
+
+pub fn half_carry_u16_add(left: u16, right: u16) -> u16 {
+    if (left & 0xFFF) + (right & 0xFFF) > 0xFFF {
+        1
+    } else {
+        0
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,5 +129,30 @@ mod tests {
     #[test]
     fn test_split() {
         assert_eq!(split(0xABCD), (0xAB, 0xCD));
+    }
+
+    #[test]
+    fn test_half_carry_u8_add() {
+        assert_eq!(half_carry_u8_add(0x0F, 0x01), 1);
+        assert_eq!(half_carry_u8_add(0x0F, 0x0F), 1);
+        assert_eq!(half_carry_u8_add(0x0F, 0x00), 0);
+    }
+
+    #[test]
+    fn test_carry_u8_add() {
+        assert_eq!(carry_u8_add(0xFF, 0x01), 1);
+        assert_eq!(carry_u8_add(0xFF, 0x00), 0);
+    }
+
+    #[test]
+    fn test_carry_u16_add() {
+        assert_eq!(carry_u16_add(0xFFFF, 0x0001), 1);
+        assert_eq!(carry_u16_add(0xFFFF, 0x0000), 0);
+    }
+
+    #[test]
+    fn test_half_carry_u16_add() {
+        assert_eq!(half_carry_u16_add(0xFFF0, 0x0010), 1);
+        assert_eq!(half_carry_u16_add(0xFFF0, 0x0000), 0);
     }
 }
