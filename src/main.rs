@@ -1,8 +1,11 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 mod utils;
 mod gameboy;
 
 fn main() {
-    let cpu = gameboy::Cpu::new();
+    let memory = gameboy::Memory::new();
+    let cpu = gameboy::Cpu::new(&memory);
 
-    println!("AF: {:04X}", cpu.get_af());
 }

@@ -1,5 +1,7 @@
 use std::sync::Mutex;
 
+use crate::utils::{combine, split};
+
 
 const ROM_00_START: usize = 0x0000;
 const ROM_00_END: usize = 0x3FFF;
@@ -78,7 +80,7 @@ impl Memory {
         }
     }
 
-    pub fn read(&self, adress: u16) -> u8 {
+    pub fn read_byte(&self, adress: u16) -> u8 {
         let adress_as_index = adress as usize;
         match adress_as_index {
             ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START],
@@ -96,25 +98,7 @@ impl Memory {
         }
     }
 
-    pub fn read_block(&self, buffer: &mut [u8], adress: u16, size: usize) {
-        let adress_as_index = adress as usize;
-        match adress_as_index {
-            ROM_00_START..=ROM_00_END => buffer.copy_from_slice(&self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START..adress_as_index - ROM_00_START + size]),
-            ROM_NN_START..=ROM_NN_END => buffer.copy_from_slice(&self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START..adress_as_index - ROM_NN_START + size]),
-            VRAM_START..=VRAM_END => buffer.copy_from_slice(&self.vram.lock().unwrap()[adress_as_index - VRAM_START..adress_as_index - VRAM_START + size]),
-            EXRAM_START..=EXRAM_END => buffer.copy_from_slice(&self.exram.lock().unwrap()[adress_as_index - EXRAM_START..adress_as_index - EXRAM_START + size]),
-            WRAM_0_START..=WRAM_0_END => buffer.copy_from_slice(&self.wram_0.lock().unwrap()[adress_as_index - WRAM_0_START..adress_as_index - WRAM_0_START + size]),
-            WRAM_NN_START..=WRAM_NN_END => buffer.copy_from_slice(&self.wram_nn.lock().unwrap()[adress_as_index - WRAM_NN_START..adress_as_index - WRAM_NN_START + size]),
-            ECHO_RAM_START..=ECHO_RAM_END => panic!("Echo RAM not implemented"),
-            OAM_START..=OAM_END => buffer.copy_from_slice(&self.oam.lock().unwrap()[adress_as_index - OAM_START..adress_as_index - OAM_START + size]),
-            IO_START..=IO_END => buffer.copy_from_slice(&self.io.lock().unwrap()[adress_as_index - IO_START..adress_as_index - IO_START + size]),
-            HRAM_START..=HRAM_END => buffer.copy_from_slice(&self.hram.lock().unwrap()[adress_as_index - HRAM_START..adress_as_index - HRAM_START + size]),
-            IE_START..=IE_END => buffer.copy_from_slice(&self.ie.lock().unwrap()[adress_as_index - IE_START..adress_as_index - IE_START + size]),
-            _ => panic!("Invalid adress: {:#06X}", adress)
-        }
-    }
-
-    pub fn write(&self, adress: u16, value: u8) {
+    pub fn write_byte(&self, adress: u16, value: u8) {
         let adress_as_index = adress as usize;
         match adress_as_index {
             ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START] = value,
@@ -132,23 +116,18 @@ impl Memory {
         }
     }
 
-    pub fn write_block(&self, adress: u16, block: &[u8]) {
-        let adress_as_index = adress as usize;
-        match adress_as_index {
-            ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START..adress_as_index - ROM_00_START + block.len()].copy_from_slice(block),
-            ROM_NN_START..=ROM_NN_END => self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START..adress_as_index - ROM_NN_START + block.len()].copy_from_slice(block),
-            VRAM_START..=VRAM_END => self.vram.lock().unwrap()[adress_as_index - VRAM_START..adress_as_index - VRAM_START + block.len()].copy_from_slice(block),
-            EXRAM_START..=EXRAM_END => self.exram.lock().unwrap()[adress_as_index - EXRAM_START..adress_as_index - EXRAM_START + block.len()].copy_from_slice(block),
-            WRAM_0_START..=WRAM_0_END => self.wram_0.lock().unwrap()[adress_as_index - WRAM_0_START..adress_as_index - WRAM_0_START + block.len()].copy_from_slice(block),
-            WRAM_NN_START..=WRAM_NN_END => self.wram_nn.lock().unwrap()[adress_as_index - WRAM_NN_START..adress_as_index - WRAM_NN_START + block.len()].copy_from_slice(block),
-            ECHO_RAM_START..=ECHO_RAM_END => panic!("Echo RAM not implemented"),
-            OAM_START..=OAM_END => self.oam.lock().unwrap()[adress_as_index - OAM_START..adress_as_index - OAM_START + block.len()].copy_from_slice(block),
-            IO_START..=IO_END => self.io.lock().unwrap()[adress_as_index - IO_START..adress_as_index - IO_START + block.len()].copy_from_slice(block),
-            HRAM_START..=HRAM_END => self.hram.lock().unwrap()[adress_as_index - HRAM_START..adress_as_index - HRAM_START + block.len()].copy_from_slice(block),
-            IE_START..=IE_END => self.ie.lock().unwrap()[adress_as_index - IE_START..adress_as_index - IE_START + block.len()].copy_from_slice(block),
-            _ => panic!("Invalid adress: {:#06X}", adress)
-        }
+    pub fn read_word(&self, adress: u16) -> u16 {
+        let lo = self.read_byte(adress);
+        let hi = self.read_byte(adress + 1);
+        combine(hi, lo)
     }
+
+    pub fn write_word(&self, adress: u16, value: u16) {
+        let (hi, lo) = split(value);
+        self.write_byte(adress, lo);
+        self.write_byte(adress + 1, hi);
+    }
+
 }
 
 #[cfg(test)]
@@ -157,17 +136,15 @@ mod tests {
 
     #[test]
     fn test_read_write() {
-        let mut memory = Memory::new();
-        memory.write(0x0000, 0xAB);
-        assert_eq!(memory.read(0x0000), 0xAB);
+        let memory = Memory::new();
+        memory.write_byte(0x0000, 0xAB);
+        assert_eq!(memory.read_byte(0x0000), 0xAB);
     }
 
     #[test]
-    fn test_read_write_block() {
-        let mut memory = Memory::new();
-        memory.write_block(0x0000, &[0xAB, 0xCD, 0xEF]);
-        let mut buffer = [0; 3];
-        memory.read_block(&mut buffer, 0x0000, 3);
-        assert_eq!(buffer, [0xAB, 0xCD, 0xEF]);
+    fn test_read_write_word() {
+        let memory = Memory::new();
+        memory.write_word(0x0000, 0xABCD);
+        assert_eq!(memory.read_word(0x0000), 0xABCD);
     }
 }

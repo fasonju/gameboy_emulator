@@ -19,6 +19,10 @@ pub fn combine(hi: u8, lo: u8) -> u16 {
     ((hi as u16) << 8) | lo as u16
 }
 
+pub fn split(n: u16) -> (u8, u8) {
+    (get_hi(n), get_lo(n))
+}
+
 /// indexed from right to left
 pub fn get_bit(n: u16, index: u8) -> u8 {
     assert!(index < 16);
@@ -87,5 +91,10 @@ mod tests {
     #[test]
     fn test_combine() {
         assert_eq!(combine(0xAB, 0xCD), 0xABCD);
+    }
+
+    #[test]
+    fn test_split() {
+        assert_eq!(split(0xABCD), (0xAB, 0xCD));
     }
 }

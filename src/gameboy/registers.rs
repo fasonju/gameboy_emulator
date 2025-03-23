@@ -1,5 +1,7 @@
 use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
+use super::cpu::{Register16, Register8};
+
 
 /// Registers module
 pub struct Registers {
@@ -24,61 +26,52 @@ impl Registers {
         }
     }
 
-    pub fn get_af(&self) -> u16 {
-        self.af
+    pub fn get_register_16(&self, register: Register16) -> u16 {
+        match register {
+            Register16::AF => self.af,
+            Register16::BC => self.bc,
+            Register16::DE => self.de,
+            Register16::HL => self.hl,
+            Register16::SP => self.sp,
+            Register16::PC => self.pc,
+        }
     }
 
-    pub fn get_bc(&self) -> u16 {
-        self.bc
+    pub fn set_register_16(&mut self, register: Register16, value: u16) {
+        match register {
+            Register16::AF => self.af = value,
+            Register16::BC => self.bc = value,
+            Register16::DE => self.de = value,
+            Register16::HL => self.hl = value,
+            Register16::SP => self.sp = value,
+            Register16::PC => self.pc = value,
+        }
     }
 
-    pub fn get_de(&self) -> u16 {
-        self.de
+    pub fn get_register_8(&self, register: Register8) -> u8 {
+        match register {
+            Register8::A => get_hi(self.af),
+            Register8::F => get_lo(self.af),
+            Register8::B => get_hi(self.bc),
+            Register8::C => get_lo(self.bc),
+            Register8::D => get_hi(self.de),
+            Register8::E => get_lo(self.de),
+            Register8::H => get_hi(self.hl),
+            Register8::L => get_lo(self.hl),
+        }
     }
 
-    pub fn get_hl(&self) -> u16 {
-        self.hl
-    }
-
-    pub fn get_sp(&self) -> u16 {
-        self.sp
-    }
-
-    pub fn get_pc(&self) -> u16 {
-        self.pc
-    }
-
-    pub fn set_af(&mut self, value: u16) {
-        self.af = value;
-    }
-
-    pub fn set_bc(&mut self, value: u16) {
-        self.bc = value;
-    }
-
-    pub fn set_de(&mut self, value: u16) {
-        self.de = value;
-    }
-
-    pub fn set_hl(&mut self, value: u16) {
-        self.hl = value;
-    }
-
-    pub fn set_sp(&mut self, value: u16) {
-        self.sp = value;
-    }
-
-    pub fn set_pc(&mut self, value: u16) {
-        self.pc = value;
-    }
-
-    // Registers for one byte at a time
-    pub fn get_a(&self) -> u8 {
-        get_hi(self.af)
-    }   
-
-    pub fn get_flags(&self) -> u8 {
-        get_lo(self.af)
+    pub fn set_register_8(&mut self, register: Register8, value: u8) {
+        match register {
+            Register8::A => set_hi(&mut self.af, value),
+            Register8::F => set_lo(&mut self.af, value),
+            Register8::B => set_hi(&mut self.bc, value),
+            Register8::C => set_lo(&mut self.bc, value),
+            Register8::D => set_hi(&mut self.de, value),
+            Register8::E => set_lo(&mut self.de, value),
+            Register8::H => set_hi(&mut self.hl, value),
+            Register8::L => set_lo(&mut self.hl, value),
+        }
     }
 
     pub fn get_zero_flag(&self) -> u8 {
@@ -97,38 +90,6 @@ impl Registers {
         get_bit(self.af, 4)
     }
 
-    pub fn get_b(&self) -> u8 {
-        get_hi(self.bc)
-    }
-
-    pub fn get_c(&self) -> u8 {
-        get_lo(self.bc)
-    }
-
-    pub fn get_d(&self) -> u8 {
-        get_hi(self.de)
-    }
-
-    pub fn get_e(&self) -> u8 {
-        get_lo(self.de)
-    }
-
-    pub fn get_h(&self) -> u8 {
-        get_hi(self.hl)
-    }
-
-    pub fn get_l(&self) -> u8 {
-        get_lo(self.hl)
-    }
-
-    pub fn set_a(&mut self, value: u8) {
-        set_hi(&mut self.af, value);
-    }
-
-    pub fn set_flags(&mut self, value: u8) {
-        set_lo(&mut self.af, value);
-    }
-
     pub fn set_zero_flag(&mut self, value: u8) {
         set_bit(&mut self.af, 7, value);
     }
@@ -144,30 +105,7 @@ impl Registers {
     pub fn set_carry_flag(&mut self, value: u8) {
         set_bit(&mut self.af, 4, value);
     }
-    
-    pub fn set_b(&mut self, value: u8) {
-        set_hi(&mut self.bc, value);
-    }
 
-    pub fn set_c(&mut self, value: u8) {
-        set_lo(&mut self.bc, value);
-    }
-
-    pub fn set_d(&mut self, value: u8) {
-        set_hi(&mut self.de, value);
-    }
-
-    pub fn set_e(&mut self, value: u8) {
-        set_lo(&mut self.de, value);
-    }
-
-    pub fn set_h(&mut self, value: u8) {
-        set_hi(&mut self.hl, value);
-    }
-
-    pub fn set_l(&mut self, value: u8) {
-        set_lo(&mut self.hl, value);
-    }
 }
 
 #[cfg(test)]
@@ -191,12 +129,12 @@ mod tests {
             sp,
             pc
         };
-        assert_eq!(registers.get_af(), af);
-        assert_eq!(registers.get_bc(), bc);
-        assert_eq!(registers.get_de(), de);
-        assert_eq!(registers.get_hl(), hl);
-        assert_eq!(registers.get_sp(), sp);
-        assert_eq!(registers.get_pc(), pc);
+        assert_eq!(registers.get_register_16(Register16::AF), af);
+        assert_eq!(registers.get_register_16(Register16::BC), bc);
+        assert_eq!(registers.get_register_16(Register16::DE), de);
+        assert_eq!(registers.get_register_16(Register16::HL), hl);
+        assert_eq!(registers.get_register_16(Register16::SP), sp);
+        assert_eq!(registers.get_register_16(Register16::PC), pc);
     }
 
     #[test]
@@ -216,14 +154,14 @@ mod tests {
             sp,
             pc
         };
-        assert_eq!(registers.get_a(), get_hi(af));
-        assert_eq!(registers.get_flags(), get_lo(af));
-        assert_eq!(registers.get_b(), get_hi(bc));
-        assert_eq!(registers.get_c(), get_lo(bc));
-        assert_eq!(registers.get_d(), get_hi(de));
-        assert_eq!(registers.get_e(), get_lo(de));
-        assert_eq!(registers.get_h(), get_hi(hl));
-        assert_eq!(registers.get_l(), get_lo(hl));
+        assert_eq!(registers.get_register_8(Register8::A), 0xAB);
+        assert_eq!(registers.get_register_8(Register8::F), 0xCD);
+        assert_eq!(registers.get_register_8(Register8::B), 0x12);
+        assert_eq!(registers.get_register_8(Register8::C), 0x34);
+        assert_eq!(registers.get_register_8(Register8::D), 0x56);
+        assert_eq!(registers.get_register_8(Register8::E), 0x78);
+        assert_eq!(registers.get_register_8(Register8::H), 0x9A);
+        assert_eq!(registers.get_register_8(Register8::L), 0xBC);
     }
 
     #[test]
@@ -244,19 +182,12 @@ mod tests {
         let sp = 0xDEF0;
         let pc = 0x1234;
 
-        registers.set_af(af);
-        registers.set_bc(bc);
-        registers.set_de(de);
-        registers.set_hl(hl);
-        registers.set_sp(sp);
-        registers.set_pc(pc);
-
-        assert_eq!(registers.get_af(), af);
-        assert_eq!(registers.get_bc(), bc);
-        assert_eq!(registers.get_de(), de);
-        assert_eq!(registers.get_hl(), hl);
-        assert_eq!(registers.get_sp(), sp);
-        assert_eq!(registers.get_pc(), pc);
+        registers.set_register_16(Register16::AF, af);
+        registers.set_register_16(Register16::BC, bc);
+        registers.set_register_16(Register16::DE, de);
+        registers.set_register_16(Register16::HL, hl);
+        registers.set_register_16(Register16::SP, sp);
+        registers.set_register_16(Register16::PC, pc);
     }
 
     #[test]
@@ -279,23 +210,24 @@ mod tests {
         let h = 0x9A;
         let l = 0xBC;
 
-        registers.set_a(a);
-        registers.set_flags(f);
-        registers.set_b(b);
-        registers.set_c(c);
-        registers.set_d(d);
-        registers.set_e(e);
-        registers.set_h(h);
-        registers.set_l(l);
+        
+        registers.set_register_8(Register8::A, a);
+        registers.set_register_8(Register8::F, f);
+        registers.set_register_8(Register8::B, b);
+        registers.set_register_8(Register8::C, c);
+        registers.set_register_8(Register8::D, d);
+        registers.set_register_8(Register8::E, e);
+        registers.set_register_8(Register8::H, h);
+        registers.set_register_8(Register8::L, l);
 
-        assert_eq!(registers.get_a(), a);
-        assert_eq!(registers.get_flags(), f);
-        assert_eq!(registers.get_b(), b);
-        assert_eq!(registers.get_c(), c);
-        assert_eq!(registers.get_d(), d);
-        assert_eq!(registers.get_e(), e);
-        assert_eq!(registers.get_h(), h);
-        assert_eq!(registers.get_l(), l);
+        assert_eq!(registers.get_register_8(Register8::A), a);
+        assert_eq!(registers.get_register_8(Register8::F), f);
+        assert_eq!(registers.get_register_8(Register8::B), b);
+        assert_eq!(registers.get_register_8(Register8::C), c);
+        assert_eq!(registers.get_register_8(Register8::D), d);
+        assert_eq!(registers.get_register_8(Register8::E), e);
+        assert_eq!(registers.get_register_8(Register8::H), h);
+        assert_eq!(registers.get_register_8(Register8::L), l);
     }
 
     #[test]
