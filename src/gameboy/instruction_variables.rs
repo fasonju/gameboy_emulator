@@ -54,6 +54,18 @@ pub enum R16STK {
     AF,
 }
 
+impl From<u8> for R16STK {
+    fn from(r: u8) -> R16STK {
+        match r {
+            0 => R16STK::BC,
+            1 => R16STK::DE,
+            2 => R16STK::HL,
+            3 => R16STK::AF,
+            _ => panic!("Invalid R16STK register")
+        }
+    }
+}
+
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R16MEM {
     BC,
@@ -84,6 +96,22 @@ pub enum B3 {
     Five,
     Six,
     Seven,
+}
+
+impl From<u8> for B3 {
+    fn from(b: u8) -> B3 {
+        match b {
+            0 => B3::Zero,
+            1 => B3::One,
+            2 => B3::Two,
+            3 => B3::Three,
+            4 => B3::Four,
+            5 => B3::Five,
+            6 => B3::Six,
+            7 => B3::Seven,
+            _ => panic!("Invalid B3")
+        }
+    }
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
