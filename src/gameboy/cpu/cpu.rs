@@ -1,5 +1,9 @@
+use crate::gameboy::Memory;
 
-use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, instructions::Instruction, memory::Memory, registers::Registers};
+use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, instructions::Instruction, registers::Registers};
+
+
+
 
 const STARTUP_AF: u16 = 0x0;
 const STARTUP_BC: u16 = 0x0;

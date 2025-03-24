@@ -2,8 +2,6 @@ use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
 use super::instruction_variables::{R16, R16MEM, R8};
 
-
-
 /// Registers module
 #[derive(Debug, Copy, Clone)]
 pub enum Register16 {

@@ -1,5 +1,8 @@
+use crate::gameboy::Memory;
 
-use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, registers::{Register16, Register8, Flag}, Cpu, Memory};
+use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, registers::{Flag, Register16, Register8}, Cpu};
+
+
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
@@ -262,8 +265,6 @@ fn check_half_carry_add_u16(left: u16, right: u16) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::gameboy::registers::{Register16, Register8};
-
     use super::*;
 
     #[test]
