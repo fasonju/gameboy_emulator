@@ -38,17 +38,17 @@ impl<'a> Cpu<'a> {
     fn fetch_instruction(&mut self) -> Instruction {
         // opcode == xxyyzzzz == xxaaabbb == iiijjbbb
         let opcode = self.fetch_byte(); 
-    
         let xx = opcode >> 6;
         let yy = (opcode >> 4) & 0x3;
         let zzzz = opcode & 0xF;
         let aaa = (opcode >> 3) & 0x7;
         let bbb = opcode & 0x7;
-        let iii = (opcode >> 5) & 0x7;
+        let iii = opcode >> 5;
         let jj = (opcode >> 3) & 0x3;
         
         // matching any one of the three tuples is enough to match the instruction, avoid mixing usage
         match ((xx, yy, zzzz), (xx, aaa, bbb), (iii, jj, bbb)) {
+            // Block 0
             ((0x0, 0x0, 0x0), _, _) => Instruction::Nop, // NOP
 
             ((0x0, _, 0x1), _, _) => Instruction::LdR16Imm16(R16::from(yy), self.fetch_word()), // LD R16, imm16
@@ -56,28 +56,44 @@ impl<'a> Cpu<'a> {
             ((0x0, _, 0xA), _, _) => Instruction::LdAR16Mem(R16MEM::from(yy)), // LD A, (R16)
             ((0x0, 0x0, 0x8), _, _) => Instruction::LdMemImm16MemSP(self.fetch_word()), // LD (imm16), SP
 
-            ((0x0, _, 0x3), _, _) => Instruction::IncR16(R16::from(yy)),
-            ((0x0, _, 0xB), _, _) => Instruction::DecR16(R16::from(yy)),
-            ((0x0, _, 0x9), _, _) => Instruction::AddHlR16(R16::from(yy)), 
+            ((0x0, _, 0x3), _, _) => Instruction::IncR16(R16::from(yy)), // INC R16
+            ((0x0, _, 0xB), _, _) => Instruction::DecR16(R16::from(yy)), // DEC R16
+            ((0x0, _, 0x9), _, _) => Instruction::AddHlR16(R16::from(yy)), // ADD HL, R16
 
-            (_, (0x0, _, 0x4), _) => Instruction::IncR8(R8::from(aaa)),
-            (_, (0x0, _, 0x5), _) => Instruction::DecR8(R8::from(aaa)),
+            (_, (0x0, _, 0x4), _) => Instruction::IncR8(R8::from(aaa)), // INC R8
+            (_, (0x0, _, 0x5), _) => Instruction::DecR8(R8::from(aaa)), // DEC R8
 
-            (_, (0x0, _, 0x6), _) => Instruction::LdR8Imm8(R8::from(aaa), self.fetch_byte()),
+            (_, (0x0, _, 0x6), _) => Instruction::LdR8Imm8(R8::from(aaa), self.fetch_byte()), // LD R8, Imm8
+ 
+            ((0x0, 0x0, 0x7), _, _) => Instruction::Rlca, // RLCA
+            ((0x0, 0x0, 0xF), _, _) => Instruction::Rrca, // RRCA
+            ((0x0, 0x1, 0x7), _, _) => Instruction::Rla, // RLA
+            ((0x0, 0x1, 0xF), _, _) => Instruction::Rra, // RRA
+            ((0x0, 0x2, 0x7), _, _) => Instruction::Daa, // DAA
+            ((0x0, 0x2, 0xF), _, _) => Instruction::Cpl, // CPL
+            ((0x0, 0x3, 0x7), _, _) => Instruction::Scf, // SCF
+            ((0x0, 0x3, 0xF), _, _) => Instruction::Ccf, // CCF
 
-            ((0x0, 0x0, 0x7), _, _) => Instruction::Rlca,
-            ((0x0, 0x0, 0xF), _, _) => Instruction::Rrca,
-            ((0x0, 0x1, 0x7), _, _) => Instruction::Rla,
-            ((0x0, 0x1, 0xF), _, _) => Instruction::Rra,
-            ((0x0, 0x2, 0x7), _, _) => Instruction::Daa,
-            ((0x0, 0x2, 0xF), _, _) => Instruction::Cpl,
-            ((0x0, 0x3, 0x7), _, _) => Instruction::Scf,
-            ((0x0, 0x3, 0xF), _, _) => Instruction::Ccf,
+            (_, _, (0x0, 0x3, 0x0)) => Instruction::JrImm8(self.fetch_byte()), // JR imm8
+            (_, _, (0x1, _, 0x0)) => Instruction::JrCondImm8(Cond::from(jj), self.fetch_byte()), // JR cond, imm8
 
-            (_, _, (0x0, 0x3, 0x0)) => Instruction::JrImm8(self.fetch_byte()),
-            (_, _, (0x1, _, 0x0)) => Instruction::JrCondImm8(Cond::from(jj), self.fetch_byte()),
+            ((0x0, 0x1, 0x0), _, _) => Instruction::Stop, // STOP   
 
-            ((0x0, 0x1, 0x0), _, _) => Instruction::Stop,
+            // Block 1
+            (_, (0x1, 0x6, 0x6), _) => Instruction::Halt, // HALT
+            (_, (0x1, _, _), _) => Instruction::LdR8R8(R8::from(aaa), R8::from(bbb)), // LD R8, R8
+
+            // Block 2
+            (_, (0x2, 0x0, _), _) => Instruction::AddAR8(R8::from(bbb)), // ADD A, R8
+            (_, (0x2, 0x1, _), _) => Instruction::AdcAR8(R8::from(bbb)), // ADC A, R8
+            (_, (0x2, 0x2, _), _) => Instruction::SubAR8(R8::from(bbb)), // SUB A, R8
+            (_, (0x2, 0x3, _), _) => Instruction::SbcAR8(R8::from(bbb)), // SBC A, R8
+            (_, (0x2, 0x4, _), _) => Instruction::AndAR8(R8::from(bbb)), // AND A, R8
+            (_, (0x2, 0x5, _), _) => Instruction::XorAR8(R8::from(bbb)), // XOR A, R8
+            (_, (0x2, 0x6, _), _) => Instruction::OrAR8(R8::from(bbb)), // OR A, R8
+            (_, (0x2, 0x7, _), _) => Instruction::CpAR8(R8::from(bbb)), // CP A, R8
+
+            // Block 3
 
             _ => panic!("Unknown instruction: {:#04X}", opcode)
 
@@ -165,5 +181,35 @@ mod tests {
 
         cpu.memory.write_byte(28, 0x10);
         assert_eq!(cpu.fetch_instruction(), Instruction::Stop);
+
+        cpu.memory.write_byte(29, 0x76);
+        assert_eq!(cpu.fetch_instruction(), Instruction::Halt);
+
+        cpu.memory.write_byte(30, 0x40);
+        assert_eq!(cpu.fetch_instruction(), Instruction::LdR8R8(R8::B, R8::B));
+
+        cpu.memory.write_byte(31, 0x80);
+        assert_eq!(cpu.fetch_instruction(), Instruction::AddAR8(R8::B));
+
+        cpu.memory.write_byte(32, 0x88);
+        assert_eq!(cpu.fetch_instruction(), Instruction::AdcAR8(R8::B));
+
+        cpu.memory.write_byte(33, 0x90);
+        assert_eq!(cpu.fetch_instruction(), Instruction::SubAR8(R8::B));
+
+        cpu.memory.write_byte(34, 0x98);
+        assert_eq!(cpu.fetch_instruction(), Instruction::SbcAR8(R8::B));
+
+        cpu.memory.write_byte(35, 0xA0);
+        assert_eq!(cpu.fetch_instruction(), Instruction::AndAR8(R8::B));
+
+        cpu.memory.write_byte(36, 0xA8);
+        assert_eq!(cpu.fetch_instruction(), Instruction::XorAR8(R8::B));
+
+        cpu.memory.write_byte(37, 0xB0);
+        assert_eq!(cpu.fetch_instruction(), Instruction::OrAR8(R8::B));
+
+        cpu.memory.write_byte(38, 0xB8);
+        assert_eq!(cpu.fetch_instruction(), Instruction::CpAR8(R8::B));
     }
 }
