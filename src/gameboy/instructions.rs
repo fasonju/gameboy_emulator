@@ -1,5 +1,5 @@
 
-use super::{instruction_variables::{Cond, R16, R16MEM, R16STK, R8, B3}, Cpu};
+use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, Cpu};
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
@@ -8,7 +8,7 @@ pub enum Instruction {
     LdR16Imm16(R16, u16),
     LdR16MemA(R16MEM),
     LdAR16Mem(R16MEM),
-    LdMemImm16MemSP(u16),
+    LdMemImm16SP(u16),
 
     IncR16(R16),
     DecR16(R16),
@@ -28,7 +28,7 @@ pub enum Instruction {
     Ccf,
 
     JrImm8(u8),
-    JrCondImm8(Cond, u8),
+    JrCondImm8(COND, u8),
 
     Stop,
 
@@ -57,20 +57,18 @@ pub enum Instruction {
     OrAImm8(u8),
     CpAImm8(u8),
 
-    RetCond(Cond),
+    RetCond(COND),
     Ret,
     Reti,
-    JpCondImm16(Cond, u16),
+    JpCondImm16(COND, u16),
     JpImm16(u16),
     JpHl,
-    CallCondImm16(Cond, u16),
+    CallCondImm16(COND, u16),
     CallImm16(u16),
-    RstTgt3(B3),
+    RstTgt3(TGT3),
 
     PopR16Stk(R16STK),
     PushR16Stk(R16STK),
-
-    // Prefix?
 
     LdMemCA,
     LdhMemImm8A(u8),
@@ -105,13 +103,13 @@ impl Instruction {
     /// Execute the instruction
     /// 
     /// Returns the number of cycles the instruction took
-    pub fn execute(self, cpu: &mut Cpu) -> u8 {
+    pub fn execute(&self, cpu: &mut Cpu) -> u8 {
         match self {
             Instruction::Nop => todo!(),
             Instruction::LdR16Imm16(register16, _) => todo!(),
             Instruction::LdR16MemA(register16_mem) => todo!(),
             Instruction::LdAR16Mem(register16_mem) => todo!(),
-            Instruction::LdMemImm16MemSP(_) => todo!(),
+            Instruction::LdMemImm16SP(_) => todo!(),
             Instruction::IncR16(register16) => todo!(),
             Instruction::DecR16(register16) => todo!(),
             Instruction::AddHlR16(register16) => todo!(),

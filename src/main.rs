@@ -6,6 +6,6 @@ mod gameboy;
 
 fn main() {
     let memory = gameboy::Memory::new();
-    let cpu = gameboy::Cpu::new(&memory);
+    let cpu = gameboy::Cpu::new();
 
 }
