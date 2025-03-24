@@ -11,8 +11,7 @@ const STARTUP_PC: u16 = 0x0;
 
 
 pub struct Cpu {
-    
-    registers: Registers, 
+    pub registers: Registers, 
 }
 
 impl Cpu {
@@ -137,6 +136,12 @@ impl Cpu {
 
         }
     }
+
+    pub fn tick(&mut self, memory: &mut Memory) -> u8 {
+        let instruction = self.fetch_instruction(&memory);
+        instruction.execute(self, memory)
+    }
+
 }
 
 fn map_prefixed_instruction(byte: u8) -> Instruction {
@@ -152,6 +157,10 @@ fn map_prefixed_instruction(byte: u8) -> Instruction {
             (0x0, 0x5, _) => Instruction::SraR8(R8::from(bbb)),
             (0x0, 0x6, _) => Instruction::SwapR8(R8::from(bbb)),
             (0x0, 0x7, _) => Instruction::SrlR8(R8::from(bbb)),
+
+            (0x1, _, _) => Instruction::BitB3R8(B3::from(aaa), R8::from(bbb)),
+            (0x2, _, _) => Instruction::ResB3R8(B3::from(aaa), R8::from(bbb)),
+            (0x3, _, _) => Instruction::SetB3R8(B3::from(aaa), R8::from(bbb)),
         _ => panic!("Unknown prefixed instruction: {:#04X}", byte)
     }
 }
@@ -372,46 +381,72 @@ mod tests {
         memory.write_byte(89, 0x38);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SrlR8(R8::B));
 
-        memory.write_byte(90, 0xE2);
+        memory.write_byte(90, 0xCB);
+        memory.write_byte(91, 0x40);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::BitB3R8(B3::Zero, R8::B));
+
+        memory.write_byte(92, 0xCB);
+        memory.write_byte(93, 0x80);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::ResB3R8(B3::Zero, R8::B));
+
+        memory.write_byte(94, 0xCB);
+        memory.write_byte(95, 0xC0);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SetB3R8(B3::Zero, R8::B));
+
+        memory.write_byte(96, 0xE2);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdMemCA);
 
-        memory.write_byte(91, 0xE0);
-        memory.write_byte(92, 0x12);
+        memory.write_byte(97, 0xE0);
+        memory.write_byte(98, 0x12);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdhMemImm8A(0x12));
 
-        memory.write_byte(93, 0xEA);
-        memory.write_byte(94, 0x34);
-        memory.write_byte(95, 0x12);
-        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdMemImm16A(0x1234));
-
-        memory.write_byte(96, 0xF2);
-        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdAMemC);
-
-        memory.write_byte(97, 0xF0);
-        memory.write_byte(98, 0x12);
-        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdhAMemImm8(0x12));
-
-        memory.write_byte(99, 0xFA);
+        memory.write_byte(99, 0xEA);
         memory.write_byte(100, 0x34);
         memory.write_byte(101, 0x12);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdMemImm16A(0x1234));
+
+        memory.write_byte(102, 0xF2);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdAMemC);
+
+        memory.write_byte(103, 0xF0);
+        memory.write_byte(104, 0x12);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdhAMemImm8(0x12));
+
+        memory.write_byte(105, 0xFA);
+        memory.write_byte(106, 0x34);
+        memory.write_byte(107, 0x12);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdAMemImm16(0x1234));
 
-        memory.write_byte(102, 0xE8);
-        memory.write_byte(103, 0x12);
+        memory.write_byte(108, 0xE8);
+        memory.write_byte(109, 0x12);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::AddSpImm8(0x12));
 
-        memory.write_byte(104, 0xF8);
-        memory.write_byte(105, 0x12);
+        memory.write_byte(110, 0xF8);
+        memory.write_byte(111, 0x12);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdHlSpImm8(0x12));
 
-        memory.write_byte(106, 0xF9);
+        memory.write_byte(112, 0xF9);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdSpHl);
 
-        memory.write_byte(107, 0xF3);
+        memory.write_byte(113, 0xF3);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::Di);
 
-        memory.write_byte(108, 0xFB);
+        memory.write_byte(114, 0xFB);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::Ei);
+    }
 
+    #[test]
+    fn test_map_prefixed_instruction() {
+        assert_eq!(map_prefixed_instruction(0x00), Instruction::RlcR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x08), Instruction::RrcR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x10), Instruction::RlR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x18), Instruction::RrR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x20), Instruction::SlaR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x28), Instruction::SraR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x30), Instruction::SwapR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x38), Instruction::SrlR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x40), Instruction::BitB3R8(B3::Zero, R8::B));
+        assert_eq!(map_prefixed_instruction(0x80), Instruction::ResB3R8(B3::Zero, R8::B));
+        assert_eq!(map_prefixed_instruction(0xC0), Instruction::SetB3R8(B3::Zero, R8::B));
     }
 }
