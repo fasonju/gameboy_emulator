@@ -137,10 +137,9 @@ impl Cpu {
     }
 
     pub fn tick(&mut self, memory: &mut Memory) -> u8 {
-        let instruction = self.fetch_instruction(&memory);
+        let instruction = self.fetch_instruction(memory);
         instruction.execute(self, memory)
     }
-
 }
 
 fn map_prefixed_instruction(byte: u8) -> Instruction {

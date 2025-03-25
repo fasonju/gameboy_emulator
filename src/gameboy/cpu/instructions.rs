@@ -254,11 +254,11 @@ impl Instruction {
 }
 
 fn check_half_carry_add_u8(left: u8, right: u8) -> bool {
-    (left & 0xF) + (right & 0xF) & 0x10 != 0x0
+    (((left & 0xF) + (right & 0xF)) & 0x10) != 0x0
 }
 
 fn check_half_carry_add_u16(left: u16, right: u16) -> bool {
-    (left & 0xFFF) + (right & 0xFFF) & 0x1000 != 0x0
+    (((left & 0xFFF) + (right & 0xFFF)) & 0x1000) != 0x0
 }
 
 #[cfg(test)]
