@@ -79,7 +79,7 @@ impl Memory {
     }
 
     pub fn read_byte(&self, adress: u16) -> u8 {
-        let adress_as_index = adress as usize;
+        let adress_as_index = usize::from(adress);
         match adress_as_index {
             ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START],
             ROM_NN_START..=ROM_NN_END => self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START],
@@ -97,7 +97,7 @@ impl Memory {
     }
 
     pub fn write_byte(&self, adress: u16, value: u8) {
-        let adress_as_index = adress as usize;
+        let adress_as_index = usize::from(adress);
         match adress_as_index {
             ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START] = value,
             ROM_NN_START..=ROM_NN_END => self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START] = value,

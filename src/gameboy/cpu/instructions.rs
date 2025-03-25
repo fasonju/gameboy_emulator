@@ -324,9 +324,29 @@ impl Instruction {
 
                 1
             },
-            Instruction::Scf => todo!(),
-            Instruction::Ccf => todo!(),
-            Instruction::JrImm8(_) => todo!(),
+            Instruction::Scf => {
+                cpu.registers.write_flag(Flag::N, 0x0);
+                cpu.registers.write_flag(Flag::H, 0x0);
+                cpu.registers.write_flag(Flag::C, 0x1);
+
+                1
+            },
+            Instruction::Ccf => {
+                let c = cpu.registers.read_flag(Flag::C);
+                cpu.registers.write_flag(Flag::N, 0x0);
+                cpu.registers.write_flag(Flag::H, 0x0);
+                cpu.registers.write_flag(Flag::C, if c == 0x1 { 0x0 } else { 0x1 });
+
+                1
+            },
+            Instruction::JrImm8(byte) => {
+                let pc = cpu.registers.read_16(Register16::PC);
+
+                let pc_new = pc.wrapping_add_signed(byte as i8 as i16); // two step casting to get the sign extension
+                cpu.registers.write_16(Register16::PC, pc_new);
+
+                3
+            },
             Instruction::JrCondImm8(condition, _) => todo!(),
             Instruction::Stop => todo!(),
             Instruction::LdR8R8(register8, register9) => todo!(),
@@ -941,6 +961,60 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
     }
 
+    #[test]
+    fn test_scf() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::Scf;
 
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_ccf() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::Ccf;
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_jr_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::JrImm8(10i8 as u8);
+        let old_pc = cpu.registers.read_16(Register16::PC);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::PC), old_pc + 10);
+    }
+
+    #[test]
+    fn test_jr_imm8_negative() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::JrImm8(-2i8 as u8);
+        cpu.registers.write_16(Register16::PC, 0x1000);
+        let old_pc = cpu.registers.read_16(Register16::PC);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::PC), old_pc - 2);
+    }
 }
 

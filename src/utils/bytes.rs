@@ -7,16 +7,16 @@ pub fn get_lo(n: u16) -> u8 {
 }
 
 pub fn set_hi(n: &mut u16, hi: u8) {
-   *n = (*n & 0x00FF) | ((hi as u16) << 8)
+   *n = (*n & 0x00FF) | ((u16::from(hi)) << 8)
 }
 
 pub fn set_lo(n: &mut u16, lo: u8) {
-    *n = (*n & 0xFF00) | lo as u16
+    *n = (*n & 0xFF00) | u16::from(lo)
 }
 
 /// combine two u8s into a u16
 pub fn combine(hi: u8, lo: u8) -> u16 {
-    ((hi as u16) << 8) | lo as u16
+    (u16::from(hi) << 8) | u16::from(lo)
 }
 
 pub fn split(n: u16) -> (u8, u8) {
@@ -69,7 +69,7 @@ pub fn half_carry_u8_add(left: u8, right: u8) -> u8 {
 }
 
 pub fn carry_u8_add(left: u8, right: u8) -> u8 {
-    if (left as u16) + (right as u16) > 0xFF {
+    if (u16::from(left)) + (u16::from(right)) > 0xFF {
         1
     } else {
         0
@@ -77,7 +77,7 @@ pub fn carry_u8_add(left: u8, right: u8) -> u8 {
 }
 
 pub fn carry_u16_add(left: u16, right: u16) -> u16 {
-    if (left as u32) + (right as u32) > 0xFFFF {
+    if (u32::from(left)) + (u32::from(right)) > 0xFFFF {
         1
     } else {
         0
