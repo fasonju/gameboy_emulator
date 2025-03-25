@@ -1,3 +1,10 @@
+/// This module contains the enums for the different variables used in the instructions.
+/// They are not the same as the ones in the registers module, as they are used to represent
+/// the different variables in the instructions, not the registers themselves.
+
+/// The R8 enum is used to represent the 8-bit registers in the instructions.
+/// 
+/// Note: MemHl is used to represent the memory at the address in HL.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R8 {
     B,

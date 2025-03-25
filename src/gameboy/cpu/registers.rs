@@ -1,3 +1,7 @@
+/// This module contains the Registers struct which holds the values of the CPU registers.
+/// It also contains the Register16, Register8 and Flag enums which are used to represent the different registers and flags.
+/// The Registers struct has methods to read and write the values of the registers and flags.
+/// The Register16 and Register8 enums have methods to convert the instruction variables to the corresponding register.
 use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
 use super::instruction_variables::{R16, R16MEM, R8};
