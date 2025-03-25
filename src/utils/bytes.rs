@@ -24,15 +24,32 @@ pub fn split(n: u16) -> (u8, u8) {
 }
 
 /// indexed from right to left
-pub fn get_bit(n: u16, index: u8) -> u8 {
+pub fn get_bit_u16(n: u16, index: u8) -> u8 {
     assert!(index < 16);
 
     (n >> index) as u8 & 1
 }
 
+pub fn get_bit_u8(n: u8, index: u8) -> u8 {
+    assert!(index < 8);
+
+    (n >> index) & 1
+}
+
+pub fn set_bit_u8(n: &mut u8, index: u8, value: u8) {
+    assert!(index < 8);
+    assert!(value == 0 || value == 1);
+
+    if value == 1 {
+        *n |= 1 << index;
+    } else {
+        *n &= !(1 << index);
+    }
+}
+
 /// Indexed from right to left
 /// set the bit at the given index
-pub fn set_bit(n: &mut u16, index: u8, value: u8) {
+pub fn set_bit_u16(n: &mut u16, index: u8, value: u8) {
     assert!(index < 16);
     assert!(value == 0 || value == 1);
 
@@ -104,19 +121,36 @@ mod tests {
     }
 
     #[test]
-    fn test_get_bit() {
-        assert_eq!(get_bit(0b1010, 0), 0);
-        assert_eq!(get_bit(0b1010, 1), 1);
-        assert_eq!(get_bit(0b1010, 2), 0);
-        assert_eq!(get_bit(0b1010, 3), 1);
+    fn test_get_bit_u16() {
+        assert_eq!(get_bit_u16(0b1010, 0), 0);
+        assert_eq!(get_bit_u16(0b1010, 1), 1);
+        assert_eq!(get_bit_u16(0b1010, 2), 0);
+        assert_eq!(get_bit_u16(0b1010, 3), 1);
     }
 
     #[test]
-    fn test_set_bit() {
+    fn test_set_bit_u16() {
         let mut n = 0b1010;
-        set_bit(&mut n, 0, 1);
+        set_bit_u16(&mut n, 0, 1);
         assert_eq!(n, 0b1011);
-        set_bit(&mut n, 0, 0);
+        set_bit_u16(&mut n, 0, 0);
+        assert_eq!(n, 0b1010);
+    }
+
+    #[test]
+    fn test_get_bit_u8() {
+        assert_eq!(get_bit_u8(0b1010, 0), 0);
+        assert_eq!(get_bit_u8(0b1010, 1), 1);
+        assert_eq!(get_bit_u8(0b1010, 2), 0);
+        assert_eq!(get_bit_u8(0b1010, 3), 1);
+    }
+
+    #[test]
+    fn test_set_bit_u8() {
+        let mut n = 0b1010;
+        set_bit_u8(&mut n, 0, 1);
+        assert_eq!(n, 0b1011);
+        set_bit_u8(&mut n, 0, 0);
         assert_eq!(n, 0b1010);
     }
 

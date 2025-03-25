@@ -2,7 +2,7 @@
 /// It also contains the Register16, Register8 and Flag enums which are used to represent the different registers and flags.
 /// The Registers struct has methods to read and write the values of the registers and flags.
 /// The Register16 and Register8 enums have methods to convert the instruction variables to the corresponding register.
-use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
+use crate::utils::{get_bit_u16, get_hi, get_lo, set_bit_u16, set_hi, set_lo};
 
 use super::instruction_variables::{R16, R16MEM, R8};
 
@@ -144,19 +144,19 @@ impl Registers {
 
     pub fn read_flag(&self, flag: Flag) -> u8 {
         match flag {
-            Flag::Z => get_bit(self.af, 0),
-            Flag::N => get_bit(self.af, 1),
-            Flag::H => get_bit(self.af, 2),
-            Flag::C => get_bit(self.af, 3)
+            Flag::Z => get_bit_u16(self.af, 0),
+            Flag::N => get_bit_u16(self.af, 1),
+            Flag::H => get_bit_u16(self.af, 2),
+            Flag::C => get_bit_u16(self.af, 3)
         }
     }
 
     pub fn write_flag(&mut self, flag: Flag, value: u8) {
         match flag {
-            Flag::Z => set_bit(&mut self.af, 0, value),
-            Flag::N => set_bit(&mut self.af, 1, value),
-            Flag::H => set_bit(&mut self.af, 2, value),
-            Flag::C => set_bit(&mut self.af, 3, value)
+            Flag::Z => set_bit_u16(&mut self.af, 0, value),
+            Flag::N => set_bit_u16(&mut self.af, 1, value),
+            Flag::H => set_bit_u16(&mut self.af, 2, value),
+            Flag::C => set_bit_u16(&mut self.af, 3, value)
         }
     }
 }
