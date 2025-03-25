@@ -296,6 +296,7 @@ impl Instruction {
 
                     if c == 0x1 {
                         adjustment += 0x60;
+                        cpu.registers.write_flag(Flag::C, 0x0);
                     }
 
                     result = a.wrapping_sub(adjustment);
@@ -843,7 +844,7 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
-        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
     }   
 
     #[test]
@@ -952,6 +953,6 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
     }
 
-    
+
 }
 
