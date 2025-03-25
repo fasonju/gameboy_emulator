@@ -287,31 +287,21 @@ impl Instruction {
                 let h = cpu.registers.read_flag(Flag::H);
                 let c = cpu.registers.read_flag(Flag::C);
                 let mut adjustment = 0;
-                let result: u8;
 
-                if n == 0x1 {
-                    if h == 0x1 {
-                        adjustment += 0x6;
-                    }
-
-                    if c == 0x1 {
-                        adjustment += 0x60;
-                        cpu.registers.write_flag(Flag::C, 0x0);
-                    }
-
-                    result = a.wrapping_sub(adjustment);
-                } else {
-                    if h == 0x1 || a & 0xF > 0x9 {
-                        adjustment += 0x6;
-                    }
-
-                    if c == 0x1 || a > 0x99 {
-                        adjustment += 0x60;
-                        cpu.registers.write_flag(Flag::C, 0x1);
-                    }
-
-                    result = a.wrapping_add(adjustment);
+                if h == 0x1 || (a & 0xF) > 9 {
+                    adjustment |= 0x6;
                 }
+
+                if c == 0x1 || a > 0x99 {
+                    adjustment |= 0x60;
+                    cpu.registers.write_flag(Flag::C, 0x1);
+                }
+
+                let result = if n == 0x0 {
+                    a.wrapping_add(adjustment)
+                } else {
+                    a.wrapping_sub(adjustment)
+                };
 
                 cpu.registers.write_8(Register8::A, result);
 
@@ -327,8 +317,6 @@ impl Instruction {
             },
             Instruction::Cpl => {
                 let a = cpu.registers.read_8(Register8::A);
-                print!("{:08b}\n", a);
-                println!("{:08b}", !a);
                 cpu.registers.write_8(Register8::A, !a);
 
                 cpu.registers.write_flag(Flag::N, 0x1);
@@ -844,7 +832,7 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
-        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
     }   
 
     #[test]
