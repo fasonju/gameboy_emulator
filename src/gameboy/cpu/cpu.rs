@@ -2,17 +2,12 @@ use crate::gameboy::Memory;
 
 use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, instructions::Instruction, registers::Registers};
 
-
-
-
 const STARTUP_AF: u16 = 0x0;
 const STARTUP_BC: u16 = 0x0;
 const STARTUP_DE: u16 = 0x0;
 const STARTUP_HL: u16 = 0x0;
 const STARTUP_SP: u16 = 0x0;
 const STARTUP_PC: u16 = 0x0;
-
-
 
 pub struct Cpu {
     pub registers: Registers, 
@@ -26,13 +21,13 @@ impl Cpu {
     }
 
     fn fetch_byte(&mut self, memory: &Memory) -> u8 {
-        let byte = memory.read_byte(self.registers.pc as u16);
+        let byte = memory.read_byte(self.registers.pc);
         self.registers.pc += 1;
         byte
     }
 
     fn fetch_word(&mut self, memory: &Memory) -> u16 {
-        let word = memory.read_word(self.registers.pc as u16);
+        let word = memory.read_word(self.registers.pc);
         self.registers.pc += 2;
         word
     }

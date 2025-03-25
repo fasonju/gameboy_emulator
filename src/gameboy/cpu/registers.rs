@@ -2,7 +2,6 @@ use crate::utils::{get_bit, get_hi, get_lo, set_bit, set_hi, set_lo};
 
 use super::instruction_variables::{R16, R16MEM, R8};
 
-/// Registers module
 #[derive(Debug, Copy, Clone)]
 pub enum Register16 {
     AF,
@@ -12,7 +11,6 @@ pub enum Register16 {
     SP,
     PC
 }
-
 
 impl From<R16> for Register16 {
     fn from(register: R16) -> Self {
@@ -241,4 +239,3 @@ mod tests {
         assert_eq!(registers.read_8(Register8::F), 0x5);
     }
 }
-

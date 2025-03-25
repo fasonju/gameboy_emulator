@@ -161,5 +161,3 @@ impl From<u8> for TGT3 {
         }
     }
 }
-
-

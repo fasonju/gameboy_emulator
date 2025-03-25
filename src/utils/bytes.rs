@@ -75,7 +75,6 @@ pub fn half_carry_u16_add(left: u16, right: u16) -> u16 {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

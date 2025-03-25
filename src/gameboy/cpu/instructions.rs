@@ -2,8 +2,6 @@ use crate::gameboy::Memory;
 
 use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, registers::{Flag, Register16, Register8}, Cpu};
 
-
-
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
     // Block 0
@@ -139,14 +137,14 @@ impl Instruction {
             Instruction::IncR16(register) => {
                 let reg = Register16::from(register);
                 let value = cpu.registers.read_16(reg);
-                cpu.registers.write_16(Register16::from(reg), value.wrapping_add(1));
+                cpu.registers.write_16(reg, value.wrapping_add(1));
 
                 2
             },
             Instruction::DecR16(register) => {
                 let reg = Register16::from(register);
                 let value = cpu.registers.read_16(reg);
-                cpu.registers.write_16(Register16::from(reg), value.wrapping_sub(1));
+                cpu.registers.write_16(reg , value.wrapping_sub(1));
 
                 2
             },
