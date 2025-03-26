@@ -4,7 +4,7 @@
 /// The Register16 and Register8 enums have methods to convert the instruction variables to the corresponding register.
 use crate::utils::{get_bit_u16, get_hi, get_lo, set_bit_u16, set_hi, set_lo};
 
-use super::instruction_variables::{R16, R16MEM, R8};
+use super::instruction_variables::{COND, R16, R16MEM, R8};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Register16 {

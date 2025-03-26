@@ -305,11 +305,7 @@ impl Instruction {
 
                 cpu.registers.write_8(Register8::A, result);
 
-                if result == 0 {
-                    cpu.registers.write_flag(Flag::Z, 0x1);
-                } else {
-                    cpu.registers.write_flag(Flag::Z, 0x0);
-                }
+                cpu.registers.write_flag(Flag::Z, if result == 0 { 0x1 } else { 0x0 });
 
                 cpu.registers.write_flag(Flag::H, 0x0);
 
@@ -347,7 +343,24 @@ impl Instruction {
 
                 3
             },
-            Instruction::JrCondImm8(condition, _) => todo!(),
+            Instruction::JrCondImm8(condition, byte) => {
+                let jump = match condition {
+                    COND::NotZero => cpu.registers.read_flag(Flag::Z) == 0,
+                    COND::Zero => cpu.registers.read_flag(Flag::Z) == 1,
+                    COND::NotCarry => cpu.registers.read_flag(Flag::C) == 0,
+                    COND::Carry => cpu.registers.read_flag(Flag::C) == 1,
+                };
+
+                if jump {
+                    let pc = cpu.registers.read_16(Register16::PC);
+                    let pc_new = pc.wrapping_add_signed(byte as i8 as i16); // two step casting to get the sign extension
+                    cpu.registers.write_16(Register16::PC, pc_new);
+
+                    3
+                } else {
+                    2
+                }
+            },
             Instruction::Stop => todo!(),
             Instruction::LdR8R8(register8, register9) => todo!(),
             Instruction::Halt => todo!(),
@@ -403,6 +416,12 @@ impl Instruction {
         }
     }
 }
+
+// helpers
+
+
+
+// utils
 
 fn check_half_carry_add_u8(left: u8, right: u8) -> bool {
     (((left & 0xF) + (right & 0xF)) & 0x10) != 0x0
@@ -1015,6 +1034,49 @@ mod tests {
 
         assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_16(Register16::PC), old_pc - 2);
+    }
+
+    #[test]
+    fn test_jr_cond_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::JrCondImm8(COND::Zero, 10i8 as u8);
+        cpu.registers.write_flag(Flag::Z, 1);
+        let old_pc = cpu.registers.read_16(Register16::PC);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::PC), old_pc + 10);
+    }
+
+    #[test]
+    fn test_jr_cond_imm8_false() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.pc = 0x1000;
+        let instruction = Instruction::JrCondImm8(COND::Zero, -10i8 as u8);
+        let old_pc = cpu.registers.read_16(Register16::PC);
+        cpu.registers.write_flag(Flag::Z, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::PC), old_pc - 10);
+    }
+
+    #[test]
+    fn test_jr_cond_imm8_untaken() {
+        let mut cpu: Cpu = Cpu::new();
+        let mut memory: Memory = Memory::new();
+        let instruction = Instruction::JrCondImm8(COND::Zero, 10i8 as u8);
+        let old_pc = cpu.registers.read_16(Register16::PC);
+        cpu.registers.write_flag(Flag::Z, 0);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_16(Register16::PC), old_pc);
     }
 }
 
