@@ -405,7 +405,27 @@ impl Instruction {
                 }
             }
             Instruction::Stop => todo!(),
-            Instruction::LdR8R8(register8, register9) => todo!(),
+            Instruction::LdR8R8(target_register, source_register) => {
+                let value = match source_register {
+                    R8::MemHl => {
+                        let address = cpu.registers.read_16(Register16::HL);
+                        memory.read_byte(address)
+                    }
+                    _ => cpu.registers.read_8(Register8::from(source_register)),
+                };
+
+                match target_register {
+                    R8::MemHl => {
+                        let address = cpu.registers.read_16(Register16::HL);
+                        memory.write_byte(address, value);
+                    }
+                    _ => cpu
+                        .registers
+                        .write_8(Register8::from(target_register), value),
+                }
+
+                1
+            }
             Instruction::Halt => todo!(),
             Instruction::AddAR8(register8) => todo!(),
             Instruction::AdcAR8(register8) => todo!(),
@@ -482,6 +502,8 @@ fn check_half_borrow_sub_u16(left: u16, right: u16) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::gameboy::cpu;
+
     use super::*;
 
     #[test]
@@ -1118,5 +1140,62 @@ mod tests {
 
         assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_16(Register16::PC), old_pc);
+    }
+
+    #[test]
+    fn test_ld_r8_r8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdR8R8(R8::A, R8::B);
+        cpu.registers.write_8(Register8::A, 0x12);
+        cpu.registers.write_8(Register8::B, 0x34);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x34);
+    }
+
+    #[test]
+    fn test_ld_r8_r8_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdR8R8(R8::A, R8::MemHl);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x56);
+        cpu.registers.write_8(Register8::A, 0x12);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x56);
+    }
+
+    #[test]
+    fn test_ld_r8_r8_memhl_b() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdR8R8(R8::MemHl, R8::A);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.write_8(Register8::A, 0x56);
+        memory.write_byte(0x1234, 0x12);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(memory.read_byte(0x1234), 0x56);
+    }
+
+    #[test]
+    fn test_ld_r8_r8_no_op() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdR8R8(R8::A, R8::A);
+        cpu.registers.write_8(Register8::A, 0x12);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x12);
     }
 }

@@ -53,6 +53,7 @@ pub enum Register8 {
 impl From<R8> for Register8 {
     fn from(register: R8) -> Register8 {
         match register {
+            R8::A => Register8::A,
             R8::B => Register8::B,
             R8::C => Register8::C,
             R8::D => Register8::D,
