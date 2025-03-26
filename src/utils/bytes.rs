@@ -7,7 +7,7 @@ pub fn get_lo(n: u16) -> u8 {
 }
 
 pub fn set_hi(n: &mut u16, hi: u8) {
-   *n = (*n & 0x00FF) | ((u16::from(hi)) << 8)
+    *n = (*n & 0x00FF) | ((u16::from(hi)) << 8)
 }
 
 pub fn set_lo(n: &mut u16, lo: u8) {

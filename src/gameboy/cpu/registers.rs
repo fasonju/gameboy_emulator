@@ -13,7 +13,7 @@ pub enum Register16 {
     DE,
     HL,
     SP,
-    PC
+    PC,
 }
 
 impl From<R16> for Register16 {
@@ -22,7 +22,7 @@ impl From<R16> for Register16 {
             R16::BC => Register16::BC,
             R16::DE => Register16::DE,
             R16::HL => Register16::HL,
-            R16::SP => Register16::SP
+            R16::SP => Register16::SP,
         }
     }
 }
@@ -33,7 +33,7 @@ impl From<R16MEM> for Register16 {
             R16MEM::BC => Register16::BC,
             R16MEM::DE => Register16::DE,
             R16MEM::HLI => Register16::HL,
-            R16MEM::HLD => Register16::HL
+            R16MEM::HLD => Register16::HL,
         }
     }
 }
@@ -47,7 +47,7 @@ pub enum Register8 {
     D,
     E,
     H,
-    L
+    L,
 }
 
 impl From<R8> for Register8 {
@@ -59,7 +59,7 @@ impl From<R8> for Register8 {
             R8::E => Register8::E,
             R8::H => Register8::H,
             R8::L => Register8::L,
-            _ => panic!("Invalid R8 register")
+            _ => panic!("Invalid R8 register"),
         }
     }
 }
@@ -68,9 +68,8 @@ pub enum Flag {
     Z,
     N,
     H,
-    C
+    C,
 }
-
 
 pub struct Registers {
     af: u16, // f is flags
@@ -78,10 +77,10 @@ pub struct Registers {
     de: u16,
     hl: u16,
     sp: u16,
-    pub pc: u16
+    pub pc: u16,
 }
 
-impl Registers {    
+impl Registers {
     /// Create a new Registers object
     pub fn new(af: u16, bc: u16, de: u16, hl: u16, sp: u16, pc: u16) -> Registers {
         Registers {
@@ -90,7 +89,7 @@ impl Registers {
             de,
             hl,
             sp,
-            pc
+            pc,
         }
     }
 
@@ -101,7 +100,7 @@ impl Registers {
             Register16::DE => self.de,
             Register16::HL => self.hl,
             Register16::SP => self.sp,
-            Register16::PC => self.pc
+            Register16::PC => self.pc,
         }
     }
 
@@ -112,7 +111,7 @@ impl Registers {
             Register16::DE => self.de = value,
             Register16::HL => self.hl = value,
             Register16::SP => self.sp = value,
-            Register16::PC => self.pc = value
+            Register16::PC => self.pc = value,
         }
     }
 
@@ -125,7 +124,7 @@ impl Registers {
             Register8::D => get_hi(self.de),
             Register8::E => get_lo(self.de),
             Register8::H => get_hi(self.hl),
-            Register8::L => get_lo(self.hl)
+            Register8::L => get_lo(self.hl),
         }
     }
 
@@ -138,7 +137,7 @@ impl Registers {
             Register8::D => set_hi(&mut self.de, value),
             Register8::E => set_lo(&mut self.de, value),
             Register8::H => set_hi(&mut self.hl, value),
-            Register8::L => set_lo(&mut self.hl, value)
+            Register8::L => set_lo(&mut self.hl, value),
         }
     }
 
@@ -147,7 +146,7 @@ impl Registers {
             Flag::Z => get_bit_u16(self.af, 0),
             Flag::N => get_bit_u16(self.af, 1),
             Flag::H => get_bit_u16(self.af, 2),
-            Flag::C => get_bit_u16(self.af, 3)
+            Flag::C => get_bit_u16(self.af, 3),
         }
     }
 
@@ -156,7 +155,7 @@ impl Registers {
             Flag::Z => set_bit_u16(&mut self.af, 0, value),
             Flag::N => set_bit_u16(&mut self.af, 1, value),
             Flag::H => set_bit_u16(&mut self.af, 2, value),
-            Flag::C => set_bit_u16(&mut self.af, 3, value)
+            Flag::C => set_bit_u16(&mut self.af, 3, value),
         }
     }
 }
@@ -239,7 +238,7 @@ mod tests {
         registers.write_flag(Flag::N, 0);
         registers.write_flag(Flag::H, 1);
         registers.write_flag(Flag::C, 0);
-        
+
         assert_eq!(registers.read_8(Register8::F), 0x5);
     }
 }

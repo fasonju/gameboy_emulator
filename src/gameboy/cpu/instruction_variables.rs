@@ -3,7 +3,7 @@
 /// the different variables in the instructions, not the registers themselves.
 
 /// The R8 enum is used to represent the 8-bit registers in the instructions.
-/// 
+///
 /// Note: MemHl is used to represent the memory at the address in HL.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R8 {
@@ -28,7 +28,7 @@ impl From<u8> for R8 {
             5 => R8::L,
             6 => R8::MemHl,
             7 => R8::A,
-            _ => panic!("Invalid R8 register")
+            _ => panic!("Invalid R8 register"),
         }
     }
 }
@@ -48,7 +48,7 @@ impl From<u8> for R16 {
             1 => R16::DE,
             2 => R16::HL,
             3 => R16::SP,
-            _ => panic!("Invalid R16 register")
+            _ => panic!("Invalid R16 register"),
         }
     }
 }
@@ -68,7 +68,7 @@ impl From<u8> for R16STK {
             1 => R16STK::DE,
             2 => R16STK::HL,
             3 => R16STK::AF,
-            _ => panic!("Invalid R16STK register")
+            _ => panic!("Invalid R16STK register"),
         }
     }
 }
@@ -88,7 +88,7 @@ impl From<u8> for R16MEM {
             1 => R16MEM::DE,
             2 => R16MEM::HLI,
             3 => R16MEM::HLD,
-            _ => panic!("Invalid R16MEM register")
+            _ => panic!("Invalid R16MEM register"),
         }
     }
 }
@@ -116,7 +116,7 @@ impl From<u8> for B3 {
             5 => B3::Five,
             6 => B3::Six,
             7 => B3::Seven,
-            _ => panic!("Invalid B3")
+            _ => panic!("Invalid B3"),
         }
     }
 }
@@ -136,7 +136,7 @@ impl From<u8> for COND {
             1 => COND::Zero,
             2 => COND::NotCarry,
             3 => COND::Carry,
-            _ => panic!("Invalid condition")
+            _ => panic!("Invalid condition"),
         }
     }
 }
@@ -164,7 +164,7 @@ impl From<u8> for TGT3 {
             0x5 => TGT3::FIVE,
             0x6 => TGT3::SIX,
             0x7 => TGT3::SEVEN,
-            _ => panic!("Invalid TGT3")
+            _ => panic!("Invalid TGT3"),
         }
     }
 }

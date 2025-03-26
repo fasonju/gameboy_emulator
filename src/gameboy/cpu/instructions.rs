@@ -1,6 +1,10 @@
 use crate::{gameboy::Memory, utils::get_bit_u8};
 
-use super::{instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3}, registers::{Flag, Register16, Register8}, Cpu};
+use super::{
+    instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3},
+    registers::{Flag, Register16, Register8},
+    Cpu,
+};
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
@@ -18,7 +22,7 @@ pub enum Instruction {
     IncR8(R8),
     DecR8(R8),
     LdR8Imm8(R8, u8),
-    
+
     Rlca,
     Rrca,
     Rla,
@@ -46,7 +50,6 @@ pub enum Instruction {
     XorAR8(R8),
     OrAR8(R8),
     CpAR8(R8),
-
 
     // Block 3
     AddAImm8(u8),
@@ -102,63 +105,69 @@ pub enum Instruction {
 
 impl Instruction {
     /// Execute the instruction
-    /// 
+    ///
     /// Returns the number of cycles the instruction took
     pub fn execute(self, cpu: &mut Cpu, memory: &mut Memory) -> u8 {
         match self {
-            Instruction::Nop => {
-                1
-            },
-            Instruction::LdR16Imm16(register, value) =>  {
+            Instruction::Nop => 1,
+            Instruction::LdR16Imm16(register, value) => {
                 cpu.registers.write_16(Register16::from(register), value);
 
                 3
-            },
+            }
             Instruction::LdR16MemA(register) => {
                 let value = cpu.registers.read_8(Register8::A);
                 let address = cpu.registers.read_16(Register16::from(register));
                 memory.write_byte(address, value);
 
                 2
-            },
+            }
             Instruction::LdAR16Mem(register) => {
                 let address = cpu.registers.read_16(Register16::from(register));
                 let value = memory.read_byte(address);
                 cpu.registers.write_8(Register8::A, value);
 
                 2
-            },
+            }
             Instruction::LdMemImm16SP(adress) => {
                 let value = cpu.registers.read_16(Register16::SP);
                 memory.write_word(adress, value);
 
                 5
-            },
+            }
             Instruction::IncR16(register) => {
                 let reg = Register16::from(register);
                 let value = cpu.registers.read_16(reg);
                 cpu.registers.write_16(reg, value.wrapping_add(1));
 
                 2
-            },
+            }
             Instruction::DecR16(register) => {
                 let reg = Register16::from(register);
                 let value = cpu.registers.read_16(reg);
-                cpu.registers.write_16(reg , value.wrapping_sub(1));
+                cpu.registers.write_16(reg, value.wrapping_sub(1));
 
                 2
-            },
+            }
             Instruction::AddHlR16(register) => {
                 let value = cpu.registers.read_16(Register16::from(register));
                 let hl = cpu.registers.read_16(Register16::HL);
                 let (result, overflow) = hl.overflowing_add(value);
                 cpu.registers.write_16(Register16::HL, result);
                 cpu.registers.write_flag(Flag::N, 0);
-                cpu.registers.write_flag(Flag::H, if check_half_carry_add_u16(hl, value) { 1 } else { 0 });
-                cpu.registers.write_flag(Flag::C, if overflow { 1 } else { 0 });
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u16(hl, value) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
 
                 2
-            },
+            }
             Instruction::IncR8(register) => {
                 match register {
                     R8::MemHl => {
@@ -167,24 +176,40 @@ impl Instruction {
                         let result = value.wrapping_add(1);
 
                         memory.write_byte(address, result);
-                        cpu.registers.write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                        cpu.registers
+                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
                         cpu.registers.write_flag(Flag::N, 0);
-                        cpu.registers.write_flag(Flag::H, if check_half_carry_add_u8(value, 1) { 1 } else { 0 });
-                    },
+                        cpu.registers.write_flag(
+                            Flag::H,
+                            if check_half_carry_add_u8(value, 1) {
+                                1
+                            } else {
+                                0
+                            },
+                        );
+                    }
                     _ => {
                         let reg = Register8::from(register);
                         let value = cpu.registers.read_8(reg);
                         let result = value.wrapping_add(1);
 
                         cpu.registers.write_8(reg, result);
-                        cpu.registers.write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                        cpu.registers
+                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
                         cpu.registers.write_flag(Flag::N, 0);
-                        cpu.registers.write_flag(Flag::H, if check_half_carry_add_u8(value, 1) { 1 } else { 0 });
+                        cpu.registers.write_flag(
+                            Flag::H,
+                            if check_half_carry_add_u8(value, 1) {
+                                1
+                            } else {
+                                0
+                            },
+                        );
                     }
                 }
 
                 1
-            },
+            }
             Instruction::DecR8(register) => {
                 match register {
                     R8::MemHl => {
@@ -193,30 +218,46 @@ impl Instruction {
                         let result = value.wrapping_sub(1);
 
                         memory.write_byte(address, result);
-                        cpu.registers.write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                        cpu.registers
+                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
                         cpu.registers.write_flag(Flag::N, 1);
-                        cpu.registers.write_flag(Flag::H, if check_half_borrow_sub_u8(value, 1) { 1 } else { 0 });
-                    },
+                        cpu.registers.write_flag(
+                            Flag::H,
+                            if check_half_borrow_sub_u8(value, 1) {
+                                1
+                            } else {
+                                0
+                            },
+                        );
+                    }
                     _ => {
                         let reg = Register8::from(register);
                         let value = cpu.registers.read_8(reg);
                         let result = value.wrapping_sub(1);
 
                         cpu.registers.write_8(reg, result);
-                        cpu.registers.write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                        cpu.registers
+                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
                         cpu.registers.write_flag(Flag::N, 1);
-                        cpu.registers.write_flag(Flag::H, if check_half_borrow_sub_u8(value, 1) { 1 } else { 0 });
+                        cpu.registers.write_flag(
+                            Flag::H,
+                            if check_half_borrow_sub_u8(value, 1) {
+                                1
+                            } else {
+                                0
+                            },
+                        );
                     }
                 }
-                
+
                 1
-            },
+            }
             Instruction::LdR8Imm8(register, value) => {
                 match register {
                     R8::MemHl => {
                         let address = cpu.registers.read_16(Register16::HL);
                         memory.write_byte(address, value);
-                    },
+                    }
                     _ => {
                         let reg = Register8::from(register);
                         cpu.registers.write_8(reg, value);
@@ -224,7 +265,7 @@ impl Instruction {
                 }
 
                 2
-            },
+            }
             Instruction::Rlca => {
                 let value = cpu.registers.read_8(Register8::A);
                 let carry = get_bit_u8(value, 7);
@@ -237,7 +278,7 @@ impl Instruction {
                 cpu.registers.write_flag(Flag::C, carry);
 
                 1
-            },
+            }
             Instruction::Rrca => {
                 let value = cpu.registers.read_8(Register8::A);
                 let carry = get_bit_u8(value, 0);
@@ -250,7 +291,7 @@ impl Instruction {
                 cpu.registers.write_flag(Flag::C, carry);
 
                 1
-            },
+            }
             Instruction::Rla => {
                 let value = cpu.registers.read_8(Register8::A);
                 let carry = cpu.registers.read_flag(Flag::C);
@@ -265,7 +306,7 @@ impl Instruction {
                 cpu.registers.write_flag(Flag::C, new_carry);
 
                 1
-            },
+            }
             Instruction::Rra => {
                 let value = cpu.registers.read_8(Register8::A);
                 let carry = cpu.registers.read_flag(Flag::C);
@@ -280,7 +321,7 @@ impl Instruction {
                 cpu.registers.write_flag(Flag::C, new_carry);
 
                 1
-            },
+            }
             Instruction::Daa => {
                 let a = cpu.registers.read_8(Register8::A);
                 let n = cpu.registers.read_flag(Flag::N);
@@ -305,12 +346,13 @@ impl Instruction {
 
                 cpu.registers.write_8(Register8::A, result);
 
-                cpu.registers.write_flag(Flag::Z, if result == 0 { 0x1 } else { 0x0 });
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 0x1 } else { 0x0 });
 
                 cpu.registers.write_flag(Flag::H, 0x0);
 
                 1
-            },
+            }
             Instruction::Cpl => {
                 let a = cpu.registers.read_8(Register8::A);
                 cpu.registers.write_8(Register8::A, !a);
@@ -319,22 +361,23 @@ impl Instruction {
                 cpu.registers.write_flag(Flag::H, 0x1);
 
                 1
-            },
+            }
             Instruction::Scf => {
                 cpu.registers.write_flag(Flag::N, 0x0);
                 cpu.registers.write_flag(Flag::H, 0x0);
                 cpu.registers.write_flag(Flag::C, 0x1);
 
                 1
-            },
+            }
             Instruction::Ccf => {
                 let c = cpu.registers.read_flag(Flag::C);
                 cpu.registers.write_flag(Flag::N, 0x0);
                 cpu.registers.write_flag(Flag::H, 0x0);
-                cpu.registers.write_flag(Flag::C, if c == 0x1 { 0x0 } else { 0x1 });
+                cpu.registers
+                    .write_flag(Flag::C, if c == 0x1 { 0x0 } else { 0x1 });
 
                 1
-            },
+            }
             Instruction::JrImm8(byte) => {
                 let pc = cpu.registers.read_16(Register16::PC);
 
@@ -342,7 +385,7 @@ impl Instruction {
                 cpu.registers.write_16(Register16::PC, pc_new);
 
                 3
-            },
+            }
             Instruction::JrCondImm8(condition, byte) => {
                 let jump = match condition {
                     COND::NotZero => cpu.registers.read_flag(Flag::Z) == 0,
@@ -360,7 +403,7 @@ impl Instruction {
                 } else {
                     2
                 }
-            },
+            }
             Instruction::Stop => todo!(),
             Instruction::LdR8R8(register8, register9) => todo!(),
             Instruction::Halt => todo!(),
@@ -418,8 +461,6 @@ impl Instruction {
 }
 
 // helpers
-
-
 
 // utils
 
@@ -503,7 +544,7 @@ mod tests {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
         let instruction = Instruction::LdR16MemA(R16MEM::BC);
-        
+
         cpu.registers.write_16(Register16::BC, 0x1234);
         cpu.registers.write_8(Register8::A, 0xAB);
 
@@ -518,7 +559,7 @@ mod tests {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
         let instruction = Instruction::LdAR16Mem(R16MEM::BC);
-        
+
         cpu.registers.write_16(Register16::BC, 0x1234);
         memory.write_byte(0x1234, 0xAB);
 
@@ -712,7 +753,7 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
         assert_eq!(cpu.registers.read_8(Register8::B), 0x0);
-    }   
+    }
 
     #[test]
     fn test_ld_r8_imm8() {
@@ -872,7 +913,7 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
         assert_eq!(cpu.registers.read_flag(Flag::C), 1);
-    }   
+    }
 
     #[test]
     fn test_daa_n_false_half() {
@@ -911,7 +952,7 @@ mod tests {
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 1);
-        assert_eq!(cpu.registers.read_8(Register8::A), 0xC0);    
+        assert_eq!(cpu.registers.read_8(Register8::A), 0xC0);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
@@ -926,13 +967,13 @@ mod tests {
         let mut memory = Memory::new();
         let instruction = Instruction::Daa;
 
-        cpu.registers.write_8(Register8::A, 0xA0);  
+        cpu.registers.write_8(Register8::A, 0xA0);
 
         cpu.registers.write_flag(Flag::N, 0);
         cpu.registers.write_flag(Flag::H, 0);
         cpu.registers.write_flag(Flag::C, 0);
 
-        let cycles =instruction.execute(&mut cpu, &mut memory);
+        let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 1);
         assert_eq!(cpu.registers.read_8(Register8::A), 0x0);
@@ -949,7 +990,7 @@ mod tests {
         let mut memory = Memory::new();
         let instruction = Instruction::Daa;
 
-        cpu.registers.write_8(Register8::A, 0x4A);  
+        cpu.registers.write_8(Register8::A, 0x4A);
 
         cpu.registers.write_flag(Flag::N, 0);
         cpu.registers.write_flag(Flag::H, 0);
@@ -1079,4 +1120,3 @@ mod tests {
         assert_eq!(cpu.registers.read_16(Register16::PC), old_pc);
     }
 }
-

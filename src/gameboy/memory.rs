@@ -2,7 +2,6 @@ use std::sync::Mutex;
 
 use crate::utils::{combine, split};
 
-
 const ROM_00_START: usize = 0x0000;
 const ROM_00_END: usize = 0x3FFF;
 const ROM_00_SIZE: usize = ROM_00_END - ROM_00_START + 1;
@@ -81,36 +80,58 @@ impl Memory {
     pub fn read_byte(&self, adress: u16) -> u8 {
         let adress_as_index = usize::from(adress);
         match adress_as_index {
-            ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START],
-            ROM_NN_START..=ROM_NN_END => self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START],
+            ROM_00_START..=ROM_00_END => {
+                self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START]
+            }
+            ROM_NN_START..=ROM_NN_END => {
+                self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START]
+            }
             VRAM_START..=VRAM_END => self.vram.lock().unwrap()[adress_as_index - VRAM_START],
             EXRAM_START..=EXRAM_END => self.exram.lock().unwrap()[adress_as_index - EXRAM_START],
-            WRAM_0_START..=WRAM_0_END => self.wram_0.lock().unwrap()[adress_as_index - WRAM_0_START],
-            WRAM_NN_START..=WRAM_NN_END => self.wram_nn.lock().unwrap()[adress_as_index - WRAM_NN_START],
+            WRAM_0_START..=WRAM_0_END => {
+                self.wram_0.lock().unwrap()[adress_as_index - WRAM_0_START]
+            }
+            WRAM_NN_START..=WRAM_NN_END => {
+                self.wram_nn.lock().unwrap()[adress_as_index - WRAM_NN_START]
+            }
             ECHO_RAM_START..=ECHO_RAM_END => panic!("Echo RAM not implemented"),
             OAM_START..=OAM_END => self.oam.lock().unwrap()[adress_as_index - OAM_START],
             IO_START..=IO_END => self.io.lock().unwrap()[adress_as_index - IO_START],
             HRAM_START..=HRAM_END => self.hram.lock().unwrap()[adress_as_index - HRAM_START],
             IE_START..=IE_END => self.ie.lock().unwrap()[adress_as_index - IE_START],
-            _ => panic!("Invalid adress: {:#06X}", adress)
+            _ => panic!("Invalid adress: {:#06X}", adress),
         }
     }
 
     pub fn write_byte(&self, adress: u16, value: u8) {
         let adress_as_index = usize::from(adress);
         match adress_as_index {
-            ROM_00_START..=ROM_00_END => self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START] = value,
-            ROM_NN_START..=ROM_NN_END => self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START] = value,
-            VRAM_START..=VRAM_END => self.vram.lock().unwrap()[adress_as_index - VRAM_START] = value,
-            EXRAM_START..=EXRAM_END => self.exram.lock().unwrap()[adress_as_index - EXRAM_START] = value,
-            WRAM_0_START..=WRAM_0_END => self.wram_0.lock().unwrap()[adress_as_index - WRAM_0_START] = value,
-            WRAM_NN_START..=WRAM_NN_END => self.wram_nn.lock().unwrap()[adress_as_index - WRAM_NN_START] = value,
+            ROM_00_START..=ROM_00_END => {
+                self.rom_00.lock().unwrap()[adress_as_index - ROM_00_START] = value
+            }
+            ROM_NN_START..=ROM_NN_END => {
+                self.rom_nn.lock().unwrap()[adress_as_index - ROM_NN_START] = value
+            }
+            VRAM_START..=VRAM_END => {
+                self.vram.lock().unwrap()[adress_as_index - VRAM_START] = value
+            }
+            EXRAM_START..=EXRAM_END => {
+                self.exram.lock().unwrap()[adress_as_index - EXRAM_START] = value
+            }
+            WRAM_0_START..=WRAM_0_END => {
+                self.wram_0.lock().unwrap()[adress_as_index - WRAM_0_START] = value
+            }
+            WRAM_NN_START..=WRAM_NN_END => {
+                self.wram_nn.lock().unwrap()[adress_as_index - WRAM_NN_START] = value
+            }
             ECHO_RAM_START..=ECHO_RAM_END => panic!("Echo RAM not implemented"),
             OAM_START..=OAM_END => self.oam.lock().unwrap()[adress_as_index - OAM_START] = value,
             IO_START..=IO_END => self.io.lock().unwrap()[adress_as_index - IO_START] = value,
-            HRAM_START..=HRAM_END => self.hram.lock().unwrap()[adress_as_index - HRAM_START] = value,
+            HRAM_START..=HRAM_END => {
+                self.hram.lock().unwrap()[adress_as_index - HRAM_START] = value
+            }
             IE_START..=IE_END => self.ie.lock().unwrap()[adress_as_index - IE_START] = value,
-            _ => panic!("Invalid adress: {:#06X}", adress)
+            _ => panic!("Invalid adress: {:#06X}", adress),
         }
     }
 
@@ -125,7 +146,6 @@ impl Memory {
         self.write_byte(adress, lo);
         self.write_byte(adress + 1, hi);
     }
-
 }
 
 #[cfg(test)]
