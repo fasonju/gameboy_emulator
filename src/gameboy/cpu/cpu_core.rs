@@ -1,7 +1,7 @@
 use crate::gameboy::Memory;
 
 use super::{
-    instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3},
+    instruction_variables::{Cond, B3, R16, R16MEM, R16STK, R8, TGT3},
     instructions::Instruction,
     registers::Registers,
 };
@@ -82,7 +82,7 @@ impl Cpu {
             // Note: offset is signed
             (_, _, (0x0, 0x3, 0x0)) => Instruction::JrImm8(self.fetch_byte(memory)), // JR imm8
             (_, _, (0x1, _, 0x0)) => {
-                Instruction::JrCondImm8(COND::from(jj), self.fetch_byte(memory))
+                Instruction::JrCondImm8(Cond::from(jj), self.fetch_byte(memory))
             } // JR cond, imm8
 
             ((0x0, 0x1, 0x0), _, _) => Instruction::Stop, // STOP
@@ -111,16 +111,16 @@ impl Cpu {
             ((0x3, 0x3, 0x6), _, _) => Instruction::OrAImm8(self.fetch_byte(memory)),  // OR A, imm8
             ((0x3, 0x3, 0xE), _, _) => Instruction::CpAImm8(self.fetch_byte(memory)),  // CP A, imm8
 
-            (_, _, (0x6, _, 0x0)) => Instruction::RetCond(COND::from(jj)), // RET cond
+            (_, _, (0x6, _, 0x0)) => Instruction::RetCond(Cond::from(jj)), // RET cond
             (_, _, (0x6, 0x1, 0x1)) => Instruction::Ret,                   // RET
             (_, _, (0x6, 0x3, 0x1)) => Instruction::Reti,                  // RETI
             (_, _, (0x6, _, 0x2)) => {
-                Instruction::JpCondImm16(COND::from(jj), self.fetch_word(memory))
+                Instruction::JpCondImm16(Cond::from(jj), self.fetch_word(memory))
             } // JP cond, imm16
             (_, _, (0x6, 0x0, 0x3)) => Instruction::JpImm16(self.fetch_word(memory)), // JP imm16
             (_, _, (0x7, 0x1, 0x1)) => Instruction::JpHl,                  // JP HL
             (_, _, (0x6, _, 0x4)) => {
-                Instruction::CallCondImm16(COND::from(jj), self.fetch_word(memory))
+                Instruction::CallCondImm16(Cond::from(jj), self.fetch_word(memory))
             } // CALL cond, imm16
             (_, _, (0x6, 0x1, 0x5)) => Instruction::CallImm16(self.fetch_word(memory)), // CALL imm16
             (_, (0x3, _, 0x7), _) => Instruction::RstTgt3(TGT3::from(aaa)),             // RST tgt3
@@ -271,7 +271,7 @@ mod tests {
         memory.write_byte(27, 0x10);
         assert_eq!(
             cpu.fetch_instruction(&memory),
-            Instruction::JrCondImm8(COND::NotZero, 0x10)
+            Instruction::JrCondImm8(Cond::NotZero, 0x10)
         );
 
         memory.write_byte(28, 0x10);
@@ -345,7 +345,7 @@ mod tests {
         memory.write_byte(55, 0xC0);
         assert_eq!(
             cpu.fetch_instruction(&memory),
-            Instruction::RetCond(COND::NotZero)
+            Instruction::RetCond(Cond::NotZero)
         );
 
         memory.write_byte(56, 0xC9);
@@ -359,7 +359,7 @@ mod tests {
         memory.write_byte(60, 0x34);
         assert_eq!(
             cpu.fetch_instruction(&memory),
-            Instruction::JpCondImm16(COND::NotZero, 0x3412)
+            Instruction::JpCondImm16(Cond::NotZero, 0x3412)
         );
 
         memory.write_byte(61, 0xC3);
@@ -375,7 +375,7 @@ mod tests {
         memory.write_byte(67, 0x34);
         assert_eq!(
             cpu.fetch_instruction(&memory),
-            Instruction::CallCondImm16(COND::NotZero, 0x3412)
+            Instruction::CallCondImm16(Cond::NotZero, 0x3412)
         );
 
         memory.write_byte(68, 0xCD);
@@ -389,7 +389,7 @@ mod tests {
         memory.write_byte(71, 0xC7);
         assert_eq!(
             cpu.fetch_instruction(&memory),
-            Instruction::RstTgt3(TGT3::ZERO)
+            Instruction::RstTgt3(TGT3::Zero)
         );
 
         memory.write_byte(72, 0xC1);

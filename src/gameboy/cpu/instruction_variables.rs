@@ -122,20 +122,20 @@ impl From<u8> for B3 {
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
-pub enum COND {
+pub enum Cond {
     Zero,
     NotZero,
     Carry,
     NotCarry,
 }
 
-impl From<u8> for COND {
-    fn from(c: u8) -> COND {
+impl From<u8> for Cond {
+    fn from(c: u8) -> Cond {
         match c {
-            0 => COND::NotZero,
-            1 => COND::Zero,
-            2 => COND::NotCarry,
-            3 => COND::Carry,
+            0 => Cond::NotZero,
+            1 => Cond::Zero,
+            2 => Cond::NotCarry,
+            3 => Cond::Carry,
             _ => panic!("Invalid condition"),
         }
     }
@@ -143,27 +143,27 @@ impl From<u8> for COND {
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum TGT3 {
-    ZERO = 0x0,
-    ONE = 0x8,
-    TWO = 0x10,
-    THREE = 0x18,
-    FOUR = 0x20,
-    FIVE = 0x28,
-    SIX = 0x30,
-    SEVEN = 0x38,
+    Zero = 0x0,
+    One = 0x8,
+    Two = 0x10,
+    Three = 0x18,
+    Four = 0x20,
+    Five = 0x28,
+    Six = 0x30,
+    Seven = 0x38,
 }
 
 impl From<u8> for TGT3 {
     fn from(t: u8) -> TGT3 {
         match t {
-            0x0 => TGT3::ZERO,
-            0x1 => TGT3::ONE,
-            0x2 => TGT3::TWO,
-            0x3 => TGT3::THREE,
-            0x4 => TGT3::FOUR,
-            0x5 => TGT3::FIVE,
-            0x6 => TGT3::SIX,
-            0x7 => TGT3::SEVEN,
+            0x0 => TGT3::Zero,
+            0x1 => TGT3::One,
+            0x2 => TGT3::Two,
+            0x3 => TGT3::Three,
+            0x4 => TGT3::Four,
+            0x5 => TGT3::Five,
+            0x6 => TGT3::Six,
+            0x7 => TGT3::Seven,
             _ => panic!("Invalid TGT3"),
         }
     }

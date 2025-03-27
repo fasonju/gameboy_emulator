@@ -1,7 +1,7 @@
 use crate::{gameboy::Memory, utils::get_bit_u8};
 
 use super::{
-    instruction_variables::{B3, COND, R16, R16MEM, R16STK, R8, TGT3},
+    instruction_variables::{Cond, B3, R16, R16MEM, R16STK, R8, TGT3},
     registers::{Flag, Register16, Register8},
     Cpu,
 };
@@ -33,7 +33,7 @@ pub enum Instruction {
     Ccf,
 
     JrImm8(u8),
-    JrCondImm8(COND, u8),
+    JrCondImm8(Cond, u8),
 
     Stop,
 
@@ -61,13 +61,13 @@ pub enum Instruction {
     OrAImm8(u8),
     CpAImm8(u8),
 
-    RetCond(COND),
+    RetCond(Cond),
     Ret,
     Reti,
-    JpCondImm16(COND, u16),
+    JpCondImm16(Cond, u16),
     JpImm16(u16),
     JpHl,
-    CallCondImm16(COND, u16),
+    CallCondImm16(Cond, u16),
     CallImm16(u16),
     RstTgt3(TGT3),
 
@@ -388,10 +388,10 @@ impl Instruction {
             }
             Instruction::JrCondImm8(condition, byte) => {
                 let jump = match condition {
-                    COND::NotZero => cpu.registers.read_flag(Flag::Z) == 0,
-                    COND::Zero => cpu.registers.read_flag(Flag::Z) == 1,
-                    COND::NotCarry => cpu.registers.read_flag(Flag::C) == 0,
-                    COND::Carry => cpu.registers.read_flag(Flag::C) == 1,
+                    Cond::NotZero => cpu.registers.read_flag(Flag::Z) == 0,
+                    Cond::Zero => cpu.registers.read_flag(Flag::Z) == 1,
+                    Cond::NotCarry => cpu.registers.read_flag(Flag::C) == 0,
+                    Cond::Carry => cpu.registers.read_flag(Flag::C) == 1,
                 };
 
                 if jump {
@@ -1160,7 +1160,7 @@ mod tests {
     fn test_jr_cond_imm8() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::JrCondImm8(COND::Zero, 10i8 as u8);
+        let instruction = Instruction::JrCondImm8(Cond::Zero, 10i8 as u8);
         cpu.registers.write_flag(Flag::Z, 1);
         let old_pc = cpu.registers.read_16(Register16::PC);
 
@@ -1175,7 +1175,7 @@ mod tests {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
         cpu.registers.pc = 0x1000;
-        let instruction = Instruction::JrCondImm8(COND::Zero, -10i8 as u8);
+        let instruction = Instruction::JrCondImm8(Cond::Zero, -10i8 as u8);
         let old_pc = cpu.registers.read_16(Register16::PC);
         cpu.registers.write_flag(Flag::Z, 1);
 
@@ -1189,7 +1189,7 @@ mod tests {
     fn test_jr_cond_imm8_untaken() {
         let mut cpu: Cpu = Cpu::new();
         let mut memory: Memory = Memory::new();
-        let instruction = Instruction::JrCondImm8(COND::Zero, 10i8 as u8);
+        let instruction = Instruction::JrCondImm8(Cond::Zero, 10i8 as u8);
         let old_pc = cpu.registers.read_16(Register16::PC);
         cpu.registers.write_flag(Flag::Z, 0);
 
