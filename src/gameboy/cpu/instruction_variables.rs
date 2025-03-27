@@ -1,6 +1,8 @@
-/// This module contains the enums for the different variables used in the instructions.
-/// They are not the same as the ones in the registers module, as they are used to represent
-/// the different variables in the instructions, not the registers themselves.
+//! This module contains the enums for the different variables used in the instructions.
+//!
+//! They are not the same as the ones in the registers module, as they are used to represent
+//!
+//! the different variables in the instructions, not the registers themselves
 
 /// The R8 enum is used to represent the 8-bit registers in the instructions.
 ///
@@ -77,8 +79,8 @@ impl From<u8> for R16STK {
 pub enum R16MEM {
     BC,
     DE,
-    HLI,
-    HLD,
+    Hli,
+    Hld,
 }
 
 impl From<u8> for R16MEM {
@@ -86,8 +88,8 @@ impl From<u8> for R16MEM {
         match r {
             0 => R16MEM::BC,
             1 => R16MEM::DE,
-            2 => R16MEM::HLI,
-            3 => R16MEM::HLD,
+            2 => R16MEM::Hli,
+            3 => R16MEM::Hld,
             _ => panic!("Invalid R16MEM register"),
         }
     }

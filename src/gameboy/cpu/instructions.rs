@@ -565,34 +565,34 @@ mod tests {
 
     #[test]
     fn test_check_half_carry_add_u8() {
-        assert_eq!(check_half_carry_add_u8(0x0F, 0x01), true);
-        assert_eq!(check_half_carry_add_u8(0x0F, 0x0F), true);
-        assert_eq!(check_half_carry_add_u8(0x0F, 0x00), false);
-        assert_eq!(check_half_carry_add_u8(0x00, 0x00), false);
+        assert!(check_half_carry_add_u8(0x0F, 0x01));
+        assert!(check_half_carry_add_u8(0x0F, 0x0F));
+        assert!(!check_half_carry_add_u8(0x0F, 0x00));
+        assert!(!check_half_carry_add_u8(0x00, 0x00));
     }
 
     #[test]
     fn test_check_half_carry_add_u16() {
-        assert_eq!(check_half_carry_add_u16(0x0FFF, 0x0001), true);
-        assert_eq!(check_half_carry_add_u16(0x0FFF, 0x0FFF), true);
-        assert_eq!(check_half_carry_add_u16(0x0FFF, 0x0000), false);
-        assert_eq!(check_half_carry_add_u16(0x0000, 0x0000), false);
+        assert!(check_half_carry_add_u16(0x0FFF, 0x0001));
+        assert!(check_half_carry_add_u16(0x0FFF, 0x0FFF));
+        assert!(!check_half_carry_add_u16(0x0FFF, 0x0000));
+        assert!(!check_half_carry_add_u16(0x0000, 0x0000));
     }
 
     #[test]
     fn test_check_half_borrow_sub_u8() {
-        assert_eq!(check_half_borrow_sub_u8(0x01, 0x01), false);
-        assert_eq!(check_half_borrow_sub_u8(0x01, 0x02), true);
-        assert_eq!(check_half_borrow_sub_u8(0x00, 0x01), true);
-        assert_eq!(check_half_borrow_sub_u8(0x0F, 0x01), false);
+        assert!(!check_half_borrow_sub_u8(0x01, 0x01));
+        assert!(check_half_borrow_sub_u8(0x01, 0x02));
+        assert!(check_half_borrow_sub_u8(0x00, 0x01));
+        assert!(!check_half_borrow_sub_u8(0x0F, 0x01));
     }
 
     #[test]
     fn test_check_half_borrow_sub_u16() {
-        assert_eq!(check_half_borrow_sub_u16(0x0001, 0x0001), false);
-        assert_eq!(check_half_borrow_sub_u16(0x0001, 0x0002), true);
-        assert_eq!(check_half_borrow_sub_u16(0x0000, 0x0001), true);
-        assert_eq!(check_half_borrow_sub_u16(0x0FFF, 0x0001), false);
+        assert!(!check_half_borrow_sub_u16(0x0001, 0x0001));
+        assert!(check_half_borrow_sub_u16(0x0001, 0x0002));
+        assert!(check_half_borrow_sub_u16(0x0000, 0x0001));
+        assert!(!check_half_borrow_sub_u16(0x0FFF, 0x0001));
     }
 
     #[test]

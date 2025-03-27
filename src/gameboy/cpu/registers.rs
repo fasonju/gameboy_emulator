@@ -32,8 +32,8 @@ impl From<R16MEM> for Register16 {
         match register {
             R16MEM::BC => Register16::BC,
             R16MEM::DE => Register16::DE,
-            R16MEM::HLI => Register16::HL,
-            R16MEM::HLD => Register16::HL,
+            R16MEM::Hli => Register16::HL,
+            R16MEM::Hld => Register16::HL,
         }
     }
 }
