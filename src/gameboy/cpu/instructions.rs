@@ -516,14 +516,14 @@ impl Instruction {
 
                 1
             }
-            Instruction::SbcAR8(register8) => {
+            Instruction::SbcAR8(register) => {
                 let a = cpu.registers.read_8(Register8::A);
-                let value = match register8 {
+                let value = match register {
                     R8::MemHl => {
                         let address = cpu.registers.read_16(Register16::HL);
                         memory.read_byte(address)
                     }
-                    _ => cpu.registers.read_8(Register8::from(register8)),
+                    _ => cpu.registers.read_8(Register8::from(register)),
                 };
                 let carry = cpu.registers.read_flag(Flag::C);
 
@@ -545,7 +545,26 @@ impl Instruction {
 
                 1
             }
-            Instruction::AndAR8(register8) => todo!(),
+            Instruction::AndAR8(register) => {
+                let value = match register {
+                    R8::MemHl => {
+                        let address = cpu.registers.read_16(Register16::HL);
+                        memory.read_byte(address)
+                    }
+                    _ => cpu.registers.read_8(Register8::from(register)),
+                };
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a & value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 1);
+
+                1
+            }
             Instruction::XorAR8(register8) => todo!(),
             Instruction::OrAR8(register8) => todo!(),
             Instruction::CpAR8(register8) => todo!(),
@@ -1642,5 +1661,58 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
         assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_and_a_r8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AndAR8(R8::B);
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_8(Register8::B, 0b1100_1100);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0b1000_1000);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_and_a_r8_0() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AndAR8(R8::B);
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_8(Register8::B, 0b0101_0101);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+    }
+
+    #[test]
+    fn test_and_a_r8_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AndAR8(R8::MemHl);
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0b1100_1100);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0b1000_1000);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
     }
 }
