@@ -65,9 +65,12 @@ impl Cpu {
             ((0x0, _, 0xB), _, _) => Instruction::DecR16(R16::from(yy)), // DEC R16
             ((0x0, _, 0x9), _, _) => Instruction::AddHlR16(R16::from(yy)), // ADD HL, R16
 
+            (_, (0x0, 0x6, 0x4), _) => Instruction::IncMemHl,
             (_, (0x0, _, 0x4), _) => Instruction::IncR8(R8::from(aaa)), // INC R8
+            (_, (0x0, 0x6, 0x5), _) => Instruction::DecMemHl,
             (_, (0x0, _, 0x5), _) => Instruction::DecR8(R8::from(aaa)), // DEC R8
 
+            (_, (0x0, 0x6, 0x0), _) => Instruction::LdMemHlImm8(self.fetch_byte(memory)),
             (_, (0x0, _, 0x6), _) => Instruction::LdR8Imm8(R8::from(aaa), self.fetch_byte(memory)), // LD R8, Imm8
 
             ((0x0, 0x0, 0x7), _, _) => Instruction::Rlca, // RLCA
@@ -89,17 +92,27 @@ impl Cpu {
 
             // Block 1
             (_, (0x1, 0x6, 0x6), _) => Instruction::Halt, // HALT
+            (_, (0x1, 0x6, _), _) => Instruction::LdMemHlR8(R8::from(bbb)), // LD (HL), R8
+            (_, (0x1, _, 0x6), _) => Instruction::LdR8MemHl(R8::from(aaa)), // LD R8, (HL)
             (_, (0x1, _, _), _) => Instruction::LdR8R8(R8::from(aaa), R8::from(bbb)), // LD R8, R8
 
             // Block 2
+            (_, (0x2, 0x0, 0x6), _) => Instruction::AddMemHl,
             (_, (0x2, 0x0, _), _) => Instruction::AddAR8(R8::from(bbb)), // ADD A, R8
+            (_, (0x2, 0x1, 0x6), _) => Instruction::AdcMemHl,
             (_, (0x2, 0x1, _), _) => Instruction::AdcAR8(R8::from(bbb)), // ADC A, R8
+            (_, (0x2, 0x2, 0x6), _) => Instruction::SubMemHl,
             (_, (0x2, 0x2, _), _) => Instruction::SubAR8(R8::from(bbb)), // SUB A, R8
+            (_, (0x2, 0x3, 0x6), _) => Instruction::SbcMemHl,
             (_, (0x2, 0x3, _), _) => Instruction::SbcAR8(R8::from(bbb)), // SBC A, R8
+            (_, (0x2, 0x4, 0x6), _) => Instruction::AndMemHl,
             (_, (0x2, 0x4, _), _) => Instruction::AndAR8(R8::from(bbb)), // AND A, R8
+            (_, (0x2, 0x5, 0x6), _) => Instruction::XorMemHl,
             (_, (0x2, 0x5, _), _) => Instruction::XorAR8(R8::from(bbb)), // XOR A, R8
-            (_, (0x2, 0x6, _), _) => Instruction::OrAR8(R8::from(bbb)),  // OR A, R8
-            (_, (0x2, 0x7, _), _) => Instruction::CpAR8(R8::from(bbb)),  // CP A, R8
+            (_, (0x2, 0x6, 0x6), _) => Instruction::OrMemHl,
+            (_, (0x2, 0x6, _), _) => Instruction::OrAR8(R8::from(bbb)), // OR A, R8
+            (_, (0x2, 0x7, 0x6), _) => Instruction::CpMemHl,
+            (_, (0x2, 0x7, _), _) => Instruction::CpAR8(R8::from(bbb)), // CP A, R8
 
             // Block 3
             ((0x3, 0x0, 0x6), _, _) => Instruction::AddAImm8(self.fetch_byte(memory)), // ADD A, imm8
@@ -159,13 +172,21 @@ fn map_prefixed_instruction(byte: u8) -> Instruction {
     let aaa = (byte >> 3) & 0x7;
     let bbb = byte & 0x7;
     match (xx, aaa, bbb) {
+        (0x0, 0x0, 0x6) => Instruction::RlcMemHl,
         (0x0, 0x0, _) => Instruction::RlcR8(R8::from(bbb)),
+        (0x0, 0x1, 0x6) => Instruction::RrcMemHl,
         (0x0, 0x1, _) => Instruction::RrcR8(R8::from(bbb)),
+        (0x0, 0x2, 0x6) => Instruction::RlMemHl,
         (0x0, 0x2, _) => Instruction::RlR8(R8::from(bbb)),
+        (0x0, 0x3, 0x6) => Instruction::RrMemHl,
         (0x0, 0x3, _) => Instruction::RrR8(R8::from(bbb)),
+        (0x0, 0x4, 0x6) => Instruction::SlaMemHl,
         (0x0, 0x4, _) => Instruction::SlaR8(R8::from(bbb)),
+        (0x0, 0x5, 0x6) => Instruction::SraMemHl,
         (0x0, 0x5, _) => Instruction::SraR8(R8::from(bbb)),
+        (0x0, 0x6, 0x6) => Instruction::SwapMemHl,
         (0x0, 0x6, _) => Instruction::SwapR8(R8::from(bbb)),
+        (0x0, 0x7, 0x6) => Instruction::SrlMemHl,
         (0x0, 0x7, _) => Instruction::SrlR8(R8::from(bbb)),
 
         (0x1, _, _) => Instruction::BitB3R8(B3::from(aaa), R8::from(bbb)),
@@ -229,14 +250,27 @@ mod tests {
         memory.write_byte(12, 0x04);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::IncR8(R8::B));
 
-        memory.write_byte(13, 0x05);
+        memory.write_byte(13, 0x34);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::IncMemHl);
+
+        memory.write_byte(14, 0x05);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::DecR8(R8::B));
+
+        memory.write_byte(15, 0x35);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::DecMemHl);
 
         memory.write_byte(14, 0x06);
         memory.write_byte(15, 0x12);
         assert_eq!(
             cpu.fetch_instruction(&memory),
             Instruction::LdR8Imm8(R8::B, 0x12)
+        );
+
+        memory.write_byte(16, 0x36);
+        memory.write_byte(17, 0x12);
+        assert_eq!(
+            cpu.fetch_instruction(&memory),
+            Instruction::LdMemHlImm8(0x12)
         );
 
         memory.write_byte(16, 0x07);
@@ -286,29 +320,65 @@ mod tests {
             Instruction::LdR8R8(R8::B, R8::B)
         );
 
+        memory.write_byte(31, 0x46);
+        assert_eq!(
+            cpu.fetch_instruction(&memory),
+            Instruction::LdR8MemHl(R8::B)
+        );
+
+        memory.write_byte(32, 0x70);
+        assert_eq!(
+            cpu.fetch_instruction(&memory),
+            Instruction::LdMemHlR8(R8::B)
+        );
+
         memory.write_byte(31, 0x80);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::AddAR8(R8::B));
+
+        memory.write_byte(32, 0x86);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::AddMemHl);
 
         memory.write_byte(32, 0x88);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::AdcAR8(R8::B));
 
+        memory.write_byte(33, 0x8E);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::AdcMemHl);
+
         memory.write_byte(33, 0x90);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SubAR8(R8::B));
+
+        memory.write_byte(34, 0x96);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SubMemHl);
 
         memory.write_byte(34, 0x98);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SbcAR8(R8::B));
 
+        memory.write_byte(35, 0x9E);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SbcMemHl);
+
         memory.write_byte(35, 0xA0);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::AndAR8(R8::B));
+
+        memory.write_byte(36, 0xA6);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::AndMemHl);
 
         memory.write_byte(36, 0xA8);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::XorAR8(R8::B));
 
+        memory.write_byte(37, 0xAE);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::XorMemHl);
+
         memory.write_byte(37, 0xB0);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::OrAR8(R8::B));
 
+        memory.write_byte(38, 0xB6);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::OrMemHl);
+
         memory.write_byte(38, 0xB8);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::CpAR8(R8::B));
+
+        memory.write_byte(39, 0xBE);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::CpMemHl);
 
         memory.write_byte(39, 0xC6);
         memory.write_byte(40, 0x12);
@@ -409,38 +479,77 @@ mod tests {
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::RlcR8(R8::B));
 
         memory.write_byte(76, 0xCB);
+        memory.write_byte(77, 0x06);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::RlcMemHl);
+
+        memory.write_byte(76, 0xCB);
         memory.write_byte(77, 0x08);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::RrcR8(R8::B));
+
+        memory.write_byte(78, 0xCB);
+        memory.write_byte(79, 0x0F);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::RrcMemHl);
 
         memory.write_byte(78, 0xCB);
         memory.write_byte(79, 0x10);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::RlR8(R8::B));
 
         memory.write_byte(80, 0xCB);
+        memory.write_byte(81, 0x16);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::RlMemHl);
+
+        memory.write_byte(80, 0xCB);
         memory.write_byte(81, 0x18);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::RrR8(R8::B));
+
+        memory.write_byte(82, 0xCB);
+        memory.write_byte(83, 0x1E);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::RrMemHl);
 
         memory.write_byte(82, 0xCB);
         memory.write_byte(83, 0x20);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SlaR8(R8::B));
 
         memory.write_byte(84, 0xCB);
+        memory.write_byte(85, 0x26);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SlaMemHl);
+
+        memory.write_byte(84, 0xCB);
         memory.write_byte(85, 0x28);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SraR8(R8::B));
+
+        memory.write_byte(86, 0xCB);
+        memory.write_byte(87, 0x2E);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SraMemHl);
 
         memory.write_byte(86, 0xCB);
         memory.write_byte(87, 0x30);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SwapR8(R8::B));
 
         memory.write_byte(88, 0xCB);
+        memory.write_byte(89, 0x36);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SwapMemHl);
+
+        memory.write_byte(88, 0xCB);
         memory.write_byte(89, 0x38);
         assert_eq!(cpu.fetch_instruction(&memory), Instruction::SrlR8(R8::B));
+
+        memory.write_byte(90, 0xCB);
+        memory.write_byte(91, 0x3E);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::SrlMemHl);
 
         memory.write_byte(90, 0xCB);
         memory.write_byte(91, 0x40);
         assert_eq!(
             cpu.fetch_instruction(&memory),
             Instruction::BitB3R8(B3::Zero, R8::B)
+        );
+
+        memory.write_byte(92, 0xCB);
+        memory.write_byte(93, 0x46);
+        assert_eq!(
+            cpu.fetch_instruction(&memory),
+            Instruction::BitB3MemHl(B3::Zero)
         );
 
         memory.write_byte(92, 0xCB);
@@ -451,10 +560,24 @@ mod tests {
         );
 
         memory.write_byte(94, 0xCB);
+        memory.write_byte(95, 0x86);
+        assert_eq!(
+            cpu.fetch_instruction(&memory),
+            Instruction::ResB3MemHl(B3::Zero)
+        );
+
+        memory.write_byte(94, 0xCB);
         memory.write_byte(95, 0xC0);
         assert_eq!(
             cpu.fetch_instruction(&memory),
             Instruction::SetB3R8(B3::Zero, R8::B)
+        );
+
+        memory.write_byte(96, 0xCB);
+        memory.write_byte(97, 0xC6);
+        assert_eq!(
+            cpu.fetch_instruction(&memory),
+            Instruction::SetB3MemHl(B3::Zero)
         );
 
         memory.write_byte(96, 0xE2);
@@ -517,24 +640,44 @@ mod tests {
     #[test]
     fn test_map_prefixed_instruction() {
         assert_eq!(map_prefixed_instruction(0x00), Instruction::RlcR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x06), Instruction::RlcMemHl);
         assert_eq!(map_prefixed_instruction(0x08), Instruction::RrcR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x0F), Instruction::RrcMemHl);
         assert_eq!(map_prefixed_instruction(0x10), Instruction::RlR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x16), Instruction::RlMemHl);
         assert_eq!(map_prefixed_instruction(0x18), Instruction::RrR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x1F), Instruction::RrMemHl);
         assert_eq!(map_prefixed_instruction(0x20), Instruction::SlaR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x26), Instruction::SlaMemHl);
         assert_eq!(map_prefixed_instruction(0x28), Instruction::SraR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x2F), Instruction::SraMemHl);
         assert_eq!(map_prefixed_instruction(0x30), Instruction::SwapR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x36), Instruction::SwapMemHl);
         assert_eq!(map_prefixed_instruction(0x38), Instruction::SrlR8(R8::B));
+        assert_eq!(map_prefixed_instruction(0x3F), Instruction::SrlMemHl);
         assert_eq!(
             map_prefixed_instruction(0x40),
             Instruction::BitB3R8(B3::Zero, R8::B)
+        );
+        assert_eq!(
+            map_prefixed_instruction(0x46),
+            Instruction::BitB3MemHl(B3::Zero)
         );
         assert_eq!(
             map_prefixed_instruction(0x80),
             Instruction::ResB3R8(B3::Zero, R8::B)
         );
         assert_eq!(
+            map_prefixed_instruction(0x86),
+            Instruction::ResB3MemHl(B3::Zero)
+        );
+        assert_eq!(
             map_prefixed_instruction(0xC0),
             Instruction::SetB3R8(B3::Zero, R8::B)
+        );
+        assert_eq!(
+            map_prefixed_instruction(0xC6),
+            Instruction::SetB3MemHl(B3::Zero)
         );
     }
 }

@@ -20,8 +20,11 @@ pub enum Instruction {
     AddHlR16(R16),
 
     IncR8(R8),
+    IncMemHl,
     DecR8(R8),
+    DecMemHl,
     LdR8Imm8(R8, u8),
+    LdMemHlImm8(u8),
 
     Rlca,
     Rrca,
@@ -39,17 +42,27 @@ pub enum Instruction {
 
     // Block 1
     LdR8R8(R8, R8),
+    LdR8MemHl(R8),
+    LdMemHlR8(R8),
     Halt,
 
     // Block 2
     AddAR8(R8),
+    AddMemHl,
     AdcAR8(R8),
+    AdcMemHl,
     SubAR8(R8),
+    SubMemHl,
     SbcAR8(R8),
+    SbcMemHl,
     AndAR8(R8),
+    AndMemHl,
     XorAR8(R8),
+    XorMemHl,
     OrAR8(R8),
+    OrMemHl,
     CpAR8(R8),
+    CpMemHl,
 
     // Block 3
     AddAImm8(u8),
@@ -89,17 +102,28 @@ pub enum Instruction {
     Ei,
 
     // Prefix CB
+    RlcMemHl,
     RlcR8(R8),
+    RrcMemHl,
     RrcR8(R8),
+    RlMemHl,
     RlR8(R8),
+    RrMemHl,
     RrR8(R8),
+    SlaMemHl,
     SlaR8(R8),
+    SraMemHl,
     SraR8(R8),
+    SwapMemHl,
     SwapR8(R8),
+    SrlMemHl,
     SrlR8(R8),
 
+    BitB3MemHl(B3),
     BitB3R8(B3, R8),
+    ResB3MemHl(B3),
     ResB3R8(B3, R8),
+    SetB3MemHl(B3),
     SetB3R8(B3, R8),
 }
 
@@ -404,7 +428,7 @@ impl Instruction {
                     2
                 }
             }
-            Instruction::Stop => todo!(), // TODO: Implement
+            Instruction::Stop => todo!(),
             Instruction::LdR8R8(target_register, source_register) => {
                 let value = match source_register {
                     R8::MemHl => {
@@ -426,7 +450,7 @@ impl Instruction {
 
                 1
             }
-            Instruction::Halt => todo!(), // TODO: Implement
+            Instruction::Halt => todo!(),
             Instruction::AddAR8(register) => {
                 let a = cpu.registers.read_8(Register8::A);
                 let value = match register {
@@ -628,6 +652,19 @@ impl Instruction {
             Instruction::BitB3R8(b3, register8) => todo!(),
             Instruction::ResB3R8(b3, register8) => todo!(),
             Instruction::SetB3R8(b3, register8) => todo!(),
+            Instruction::IncMemHl => todo!(),
+            Instruction::DecMemHl => todo!(),
+            Instruction::LdMemHlImm8(_) => todo!(),
+            Instruction::LdR8MemHl(r8) => todo!(),
+            Instruction::LdMemHlR8(r8) => todo!(),
+            Instruction::AddMemHl => todo!(),
+            Instruction::AdcMemHl => todo!(),
+            Instruction::SubMemHl => todo!(),
+            Instruction::SbcMemHl => todo!(),
+            Instruction::AndMemHl => todo!(),
+            Instruction::XorMemHl => todo!(),
+            Instruction::OrMemHl => todo!(),
+            Instruction::CpMemHl => todo!(),
         }
     }
 }

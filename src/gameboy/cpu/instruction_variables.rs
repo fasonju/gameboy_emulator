@@ -15,7 +15,6 @@ pub enum R8 {
     E,
     H,
     L,
-    MemHl, // Memory at HL
     A,
 }
 
@@ -28,7 +27,6 @@ impl From<u8> for R8 {
             3 => R8::E,
             4 => R8::H,
             5 => R8::L,
-            6 => R8::MemHl,
             7 => R8::A,
             _ => panic!("Invalid R8 register"),
         }
