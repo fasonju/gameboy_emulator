@@ -6,6 +6,7 @@ use super::{
     Cpu,
 };
 
+/// Instructions for the Gameboy CPU
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Instruction {
     // Block 0
@@ -129,6 +130,8 @@ pub enum Instruction {
 
 impl Instruction {
     /// Execute the instruction
+    ///
+    /// Consumes the instruction and modifies the CPU and memory
     ///
     /// Returns the number of cycles the instruction took
     pub fn execute(self, cpu: &mut Cpu, memory: &mut Memory) -> u8 {

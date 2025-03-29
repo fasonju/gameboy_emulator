@@ -1,11 +1,13 @@
-/// This module contains the Registers struct which holds the values of the CPU registers.
-/// It also contains the Register16, Register8 and Flag enums which are used to represent the different registers and flags.
-/// The Registers struct has methods to read and write the values of the registers and flags.
-/// The Register16 and Register8 enums have methods to convert the instruction variables to the corresponding register.
+//! This module contains the Registers struct which holds the values of the CPU registers.
+//! It also contains the Register16, Register8 and Flag enums which are used to represent the different registers and flags.
+//! The Registers struct has methods to read and write the values of the registers and flags.
+//! The Register16 and Register8 enums have methods to convert the instruction variables to the corresponding register.
+
 use crate::utils::{get_bit_u16, get_hi, get_lo, set_bit_u16, set_hi, set_lo};
 
 use super::instruction_variables::{R16, R16MEM, R8};
 
+/// 16 bit register for reading and writing
 #[derive(Debug, Copy, Clone)]
 pub enum Register16 {
     AF,
@@ -38,6 +40,7 @@ impl From<R16MEM> for Register16 {
     }
 }
 
+/// 8 bit parts of register for reading and writing
 #[derive(Debug, Copy, Clone)]
 pub enum Register8 {
     A,
@@ -64,6 +67,7 @@ impl From<R8> for Register8 {
     }
 }
 
+/// Flag register for reading and writing
 pub enum Flag {
     Z,
     N,
@@ -71,6 +75,9 @@ pub enum Flag {
     C,
 }
 
+/// Contains the values of the CPU registers
+///
+/// PC is public for easy access
 pub struct Registers {
     af: u16, // f is flags
     bc: u16,
@@ -93,6 +100,7 @@ impl Registers {
         }
     }
 
+    /// read the value of a 16 bit register
     pub fn read_16(&self, register: Register16) -> u16 {
         match register {
             Register16::AF => self.af,
@@ -104,6 +112,7 @@ impl Registers {
         }
     }
 
+    /// write a value to a 16 bit register
     pub fn write_16(&mut self, register: Register16, value: u16) {
         match register {
             Register16::AF => self.af = value,
@@ -115,6 +124,7 @@ impl Registers {
         }
     }
 
+    /// read the 8 bit part of a register
     pub fn read_8(&self, register: Register8) -> u8 {
         match register {
             Register8::A => get_hi(self.af),
@@ -128,6 +138,7 @@ impl Registers {
         }
     }
 
+    /// write a value to the 8 bit part of a register
     pub fn write_8(&mut self, register: Register8, value: u8) {
         match register {
             Register8::A => set_hi(&mut self.af, value),
@@ -141,6 +152,7 @@ impl Registers {
         }
     }
 
+    /// read the value of a flag
     pub fn read_flag(&self, flag: Flag) -> u8 {
         match flag {
             Flag::Z => get_bit_u16(self.af, 0),
@@ -150,6 +162,7 @@ impl Registers {
         }
     }
 
+    /// write a value to a flag
     pub fn write_flag(&mut self, flag: Flag, value: u8) {
         match flag {
             Flag::Z => set_bit_u16(&mut self.af, 0, value),
