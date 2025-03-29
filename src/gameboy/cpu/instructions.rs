@@ -919,8 +919,38 @@ impl Instruction {
 
                 2
             }
-            Instruction::RetCond(condition) => todo!(),
-            Instruction::Ret => todo!(),
+            Instruction::RetCond(condition) => {
+                let cond = match condition {
+                    Cond::Zero => cpu.registers.read_flag(Flag::Z) == 0x1,
+                    Cond::NotZero => cpu.registers.read_flag(Flag::Z) == 0x0,
+                    Cond::Carry => cpu.registers.read_flag(Flag::C) == 0x1,
+                    Cond::NotCarry => cpu.registers.read_flag(Flag::C) == 0x0,
+                };
+
+                if !cond {
+                    return 2;
+                }
+
+                let sp = cpu.registers.read_16(Register16::SP);
+
+                let word = memory.read_word(sp);
+
+                cpu.registers.write_16(Register16::PC, word);
+                // stack grows top down
+                cpu.registers.write_16(Register16::SP, sp + 2);
+                5
+            }
+            Instruction::Ret => {
+                let sp = cpu.registers.read_16(Register16::SP);
+
+                let word = memory.read_word(sp);
+
+                cpu.registers.write_16(Register16::PC, word);
+                //stack grows top down
+                cpu.registers.write_16(Register16::SP, sp + 2);
+
+                4
+            }
             Instruction::Reti => todo!(),
             Instruction::JpCondImm16(condition, _) => todo!(),
             Instruction::JpImm16(_) => todo!(),
@@ -989,6 +1019,7 @@ fn check_half_borrow_sub_u16(left: u16, right: u16) -> bool {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -3171,5 +3202,53 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
         assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_ret() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        memory.write_byte(0x1234, 0x78);
+        memory.write_byte(0x1235, 0x56);
+
+        let cycles = Instruction::Ret.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x5678);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1236);
+    }
+
+    #[test]
+    fn test_ret_cond_taken() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        memory.write_byte(0x1234, 0x78);
+        memory.write_byte(0x1235, 0x56);
+        cpu.registers.write_flag(Flag::Z, 1);
+
+        let cycles = Instruction::RetCond(Cond::Zero).execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 5);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x5678);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1236);
+    }
+
+    #[test]
+    fn test_ret_cond_untaken() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        cpu.registers.pc = 0x4444;
+        memory.write_byte(0x1234, 0x78);
+        memory.write_byte(0x1235, 0x56);
+        cpu.registers.write_flag(Flag::Z, 0);
+
+        let cycles = Instruction::RetCond(Cond::Zero).execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x4444);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1234);
     }
 }
