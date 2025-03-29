@@ -931,23 +931,15 @@ impl Instruction {
                     return 2;
                 }
 
-                let sp = cpu.registers.read_16(Register16::SP);
-
-                let word = memory.read_word(sp);
+                let word = stack_pop_16(cpu, memory);
 
                 cpu.registers.write_16(Register16::PC, word);
-                // stack grows top down
-                cpu.registers.write_16(Register16::SP, sp + 2);
+
                 5
             }
             Instruction::Ret => {
-                let sp = cpu.registers.read_16(Register16::SP);
-
-                let word = memory.read_word(sp);
-
+                let word = stack_pop_16(cpu, memory);
                 cpu.registers.write_16(Register16::PC, word);
-                //stack grows top down
-                cpu.registers.write_16(Register16::SP, sp + 2);
 
                 4
             }
@@ -980,7 +972,7 @@ impl Instruction {
 
                 1
             }
-            Instruction::CallCondImm16(condition, _) => todo!(),
+            Instruction::CallCondImm16(condition, location) => todo!(),
             Instruction::CallImm16(_) => todo!(),
             Instruction::RstTgt3(b3) => todo!(),
             Instruction::PopR16Stk(register16_stk) => todo!(),
@@ -1023,6 +1015,39 @@ impl Instruction {
 }
 
 // helpers
+fn stack_push_16(cpu: &mut Cpu, memory: &mut Memory, value: u16) {
+    let sp = cpu.registers.read_16(Register16::SP);
+
+    memory.write_word(sp - 2, value);
+    cpu.registers.write_16(Register16::SP, sp - 2);
+}
+
+fn stack_pop_16(cpu: &mut Cpu, memory: &Memory) -> u16 {
+    let sp = cpu.registers.read_16(Register16::SP);
+
+    let value = memory.read_word(sp);
+
+    cpu.registers.write_16(Register16::SP, sp + 2);
+
+    value
+}
+
+fn stack_push_8(cpu: &mut Cpu, memory: &mut Memory, value: u8) {
+    let sp = cpu.registers.read_16(Register16::SP);
+
+    memory.write_byte(sp - 1, value);
+    cpu.registers.write_16(Register16::SP, sp - 1);
+}
+
+fn stack_pop_8(cpu: &mut Cpu, memory: &Memory) -> u8 {
+    let sp = cpu.registers.read_16(Register16::SP);
+
+    let value = memory.read_byte(sp);
+
+    cpu.registers.write_16(Register16::SP, sp + 1);
+
+    value
+}
 
 // utils
 
