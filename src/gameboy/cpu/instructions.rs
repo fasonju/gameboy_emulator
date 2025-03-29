@@ -364,12 +364,9 @@ impl Instruction {
                 } else {
                     a.wrapping_sub(adjustment)
                 };
-
                 cpu.registers.write_8(Register8::A, result);
-
                 cpu.registers
                     .write_flag(Flag::Z, if result == 0 { 0x1 } else { 0x0 });
-
                 cpu.registers.write_flag(Flag::H, 0x0);
 
                 1
@@ -772,8 +769,55 @@ impl Instruction {
 
                 1
             }
-            Instruction::AddAImm8(_) => todo!(),
-            Instruction::AdcAImm8(_) => todo!(),
+            Instruction::AddAImm8(value) => {
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a.wrapping_add(value);
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u8(a, value) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+                cpu.registers.write_flag(
+                    Flag::C,
+                    if (a as u16 + value as u16) > 0xFF {
+                        1
+                    } else {
+                        0
+                    },
+                );
+
+                2
+            }
+            Instruction::AdcAImm8(value) => {
+                let a = cpu.registers.read_8(Register8::A);
+                let c = cpu.registers.read_flag(Flag::C);
+
+                let (sub_result, sub_result_carry) = a.overflowing_add(c);
+                let (result, result_carry) = sub_result.overflowing_add(value);
+
+                let half_carry =
+                    check_half_carry_add_u8(a, c) || check_half_carry_add_u8(sub_result, value);
+                let carry = sub_result_carry || result_carry;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers
+                    .write_flag(Flag::H, if half_carry { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::C, if carry { 1 } else { 0 });
+
+                2
+            }
             Instruction::SubAImm8(_) => todo!(),
             Instruction::SbcAImm8(_) => todo!(),
             Instruction::AndAImm8(_) => todo!(),
@@ -2586,6 +2630,146 @@ mod tests {
         assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_add_a_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAImm8(0x12);
+        cpu.registers.write_8(Register8::A, 0x0);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x12);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_imm8_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAImm8(0x0);
+        cpu.registers.write_8(Register8::A, 0x0);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_imm8_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAImm8(0x0F);
+        cpu.registers.write_8(Register8::A, 0x0F);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x1E);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_imm8_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAImm8(0x01);
+        cpu.registers.write_8(Register8::A, 0xFF);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_adc_a_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAImm8(0x12);
+        cpu.registers.write_8(Register8::A, 0x1);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x14);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_imm8_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAImm8(0x0);
+        cpu.registers.write_8(Register8::A, 0x0);
+        cpu.registers.write_flag(Flag::C, 0);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_imm8_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAImm8(0x0E);
+        cpu.registers.write_8(Register8::A, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x10);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_imm8_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAImm8(0x01);
+        cpu.registers.write_8(Register8::A, 0xFF);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x01);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
         assert_eq!(cpu.registers.read_flag(Flag::C), 1);
     }
