@@ -864,7 +864,7 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
@@ -881,7 +881,7 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
@@ -898,7 +898,7 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
@@ -963,7 +963,7 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
@@ -980,7 +980,7 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
@@ -997,7 +997,7 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
@@ -1016,19 +1016,19 @@ mod tests {
         assert_eq!(cpu.registers.read_8(Register8::B), 0xAB);
     }
 
-    // #[test]
-    // fn test_ld_r8_imm8_memhl() {
-    //     let mut cpu = Cpu::new();
-    //     let mut memory = Memory::new();
-    //     let instruction = Instruction::LdR8Imm8(R8::MemHl, 0xAB);
-    //     cpu.registers.write_16(Register16::HL, 0x1234);
-    //
-    //     let cycles = instruction.execute(&mut cpu, &mut memory);
-    //
-    //     assert_eq!(cycles, 2);
-    //     assert_eq!(memory.read_byte(0x1234), 0xAB);
-    // }
-    //
+    #[test]
+    fn test_ld_memhl_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdMemHlImm8(0xAB);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(memory.read_byte(0x1234), 0xAB);
+    }
+
     #[test]
     fn test_rlca() {
         let mut cpu = Cpu::new();
@@ -1383,36 +1383,33 @@ mod tests {
         assert_eq!(cpu.registers.read_8(Register8::A), 0x34);
     }
 
-    // #[test]
-    // fn test_ld_r8_r8_memhl() {
-    //     let mut cpu = Cpu::new();
-    //     let mut memory = Memory::new();
-    //     let instruction = Instruction::LdR8R8(R8::A, R8::MemHl);
-    //     cpu.registers.write_16(Register16::HL, 0x1234);
-    //     memory.write_byte(0x1234, 0x56);
-    //     cpu.registers.write_8(Register8::A, 0x12);
-    //
-    //     let cycles = instruction.execute(&mut cpu, &mut memory);
-    //
-    //     assert_eq!(cycles, 1);
-    //     assert_eq!(cpu.registers.read_8(Register8::A), 0x56);
-    // }
-    //
-    // #[test]
-    // fn test_ld_r8_r8_memhl_b() {
-    //     let mut cpu = Cpu::new();
-    //     let mut memory = Memory::new();
-    //     let instruction = Instruction::LdR8R8(R8::MemHl, R8::A);
-    //     cpu.registers.write_16(Register16::HL, 0x1234);
-    //     cpu.registers.write_8(Register8::A, 0x56);
-    //     memory.write_byte(0x1234, 0x12);
-    //
-    //     let cycles = instruction.execute(&mut cpu, &mut memory);
-    //
-    //     assert_eq!(cycles, 1);
-    //     assert_eq!(memory.read_byte(0x1234), 0x56);
-    // }
-    //
+    #[test]
+    fn test_ld_r8_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdR8MemHl(R8::A);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x56);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x56);
+    }
+
+    #[test]
+    fn test_ld_memhl_r8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::LdMemHlR8(R8::A);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.write_8(Register8::A, 0x56);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(memory.read_byte(0x1234), 0x56);
+    }
 
     #[test]
     fn test_ld_r8_r8_no_op() {
@@ -1500,6 +1497,82 @@ mod tests {
     }
 
     #[test]
+    fn test_add_a_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0x12);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x34);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x46);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x00);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_memhl_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0x0F);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x10);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_memhl_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0xFF);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
     fn test_adc_a_r8() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
@@ -1568,6 +1641,86 @@ mod tests {
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_adc_a_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x12);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.write_flag(Flag::C, 1);
+        memory.write_byte(0x1234, 0x34);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x47);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.write_flag(Flag::C, 0);
+        memory.write_byte(0x1234, 0x00);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_memhl_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x0E);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x10);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_memhl_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0xFE);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
