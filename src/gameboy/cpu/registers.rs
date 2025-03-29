@@ -60,7 +60,6 @@ impl From<R8> for Register8 {
             R8::E => Register8::E,
             R8::H => Register8::H,
             R8::L => Register8::L,
-            _ => panic!("Invalid R8 register"),
         }
     }
 }
