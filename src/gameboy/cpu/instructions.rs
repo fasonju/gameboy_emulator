@@ -696,8 +696,37 @@ impl Instruction {
 
                 1
             }
-            Instruction::OrAMemHl => todo!(),
-            Instruction::OrAR8(register8) => todo!(),
+            Instruction::OrAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a | value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+                cpu.registers.write_flag(Flag::C, 0);
+
+                2
+            }
+            Instruction::OrAR8(register) => {
+                let value = cpu.registers.read_8(Register8::from(register));
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a | value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+                cpu.registers.write_flag(Flag::C, 0);
+
+                1
+            }
             Instruction::CpAMemHl => todo!(),
             Instruction::CpAR8(register8) => todo!(),
             Instruction::AddAImm8(_) => todo!(),
@@ -2296,6 +2325,78 @@ mod tests {
         cpu.registers.write_8(Register8::A, 0b1010_1010);
         cpu.registers.write_16(Register16::HL, 0x1234);
         memory.write_byte(0x1234, 0b1010_1010);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+    }
+
+    #[test]
+    fn test_or_a_r8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::OrAR8(R8::B);
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_8(Register8::B, 0b1100_1100);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0b1110_1110);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_or_a_r8_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::OrAR8(R8::B);
+        cpu.registers.write_8(Register8::A, 0x0);
+        cpu.registers.write_8(Register8::B, 0x0);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+    }
+
+    #[test]
+    fn test_or_a_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::OrAMemHl;
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0b1100_1100);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0b1110_1110);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_or_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::OrAMemHl;
+        cpu.registers.write_8(Register8::A, 0x0);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x0);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
