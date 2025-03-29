@@ -952,9 +952,34 @@ impl Instruction {
                 4
             }
             Instruction::Reti => todo!(),
-            Instruction::JpCondImm16(condition, _) => todo!(),
-            Instruction::JpImm16(_) => todo!(),
-            Instruction::JpHl => todo!(),
+            Instruction::JpCondImm16(condition, location) => {
+                let jump = match condition {
+                    Cond::Zero => cpu.registers.read_flag(Flag::Z) == 0x1,
+                    Cond::NotZero => cpu.registers.read_flag(Flag::Z) == 0x0,
+                    Cond::Carry => cpu.registers.read_flag(Flag::C) == 0x1,
+                    Cond::NotCarry => cpu.registers.read_flag(Flag::C) == 0x0,
+                };
+
+                if !jump {
+                    return 3;
+                }
+
+                cpu.registers.write_16(Register16::PC, location);
+
+                4
+            }
+            Instruction::JpImm16(location) => {
+                cpu.registers.write_16(Register16::PC, location);
+
+                4
+            }
+            Instruction::JpHl => {
+                let hl = cpu.registers.read_16(Register16::HL);
+
+                cpu.registers.write_16(Register16::PC, hl);
+
+                1
+            }
             Instruction::CallCondImm16(condition, _) => todo!(),
             Instruction::CallImm16(_) => todo!(),
             Instruction::RstTgt3(b3) => todo!(),
@@ -3250,5 +3275,47 @@ mod tests {
         assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_16(Register16::PC), 0x4444);
         assert_eq!(cpu.registers.read_16(Register16::SP), 0x1234);
+    }
+
+    #[test]
+    fn test_jp_cond_imm16_taken() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_flag(Flag::Z, 1);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::JpCondImm16(Cond::Zero, 0x1234);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x1234);
+    }
+
+    #[test]
+    fn test_jp_cond_imm16_untaken() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_flag(Flag::Z, 0);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::JpCondImm16(Cond::Zero, 0x1234);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x4321);
+    }
+
+    #[test]
+    fn test_jp_hl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::JpHl;
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x1234);
     }
 }
