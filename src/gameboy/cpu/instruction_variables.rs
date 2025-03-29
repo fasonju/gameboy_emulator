@@ -20,6 +20,7 @@ pub enum R8 {
 
 impl From<u8> for R8 {
     fn from(r: u8) -> R8 {
+        println!("r: {}", r);
         match r {
             0 => R8::B,
             1 => R8::C,
