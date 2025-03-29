@@ -884,7 +884,20 @@ impl Instruction {
 
                 2
             }
-            Instruction::OrAImm8(_) => todo!(),
+            Instruction::OrAImm8(value) => {
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a | value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+                cpu.registers.write_flag(Flag::C, 0);
+
+                2
+            }
             Instruction::CpAImm8(_) => todo!(),
             Instruction::RetCond(condition) => todo!(),
             Instruction::Ret => todo!(),
@@ -3033,6 +3046,39 @@ mod tests {
         let mut memory = Memory::new();
         let instruction = Instruction::XorAImm8(0b1010_1010);
         cpu.registers.write_8(Register8::A, 0b1010_1010);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+    }
+
+    #[test]
+    fn test_or_a_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::OrAImm8(0b1100_1100);
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0b1110_1110);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_or_a_imm8_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::OrAImm8(0b0);
+        cpu.registers.write_8(Register8::A, 0b0);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
