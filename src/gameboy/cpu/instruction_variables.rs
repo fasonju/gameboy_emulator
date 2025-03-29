@@ -28,7 +28,7 @@ impl From<u8> for R8 {
             4 => R8::H,
             5 => R8::L,
             7 => R8::A,
-            _ => panic!("Invalid R8 register"),
+            _ => panic!("Invalid R8 register: {}", r),
         }
     }
 }
