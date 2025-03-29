@@ -20,8 +20,11 @@ pub enum Instruction {
     AddHlR16(R16),
 
     IncR8(R8),
+    IncMemHl,
     DecR8(R8),
+    DecMemHl,
     LdR8Imm8(R8, u8),
+    LdMemHlImm8(u8),
 
     Rlca,
     Rrca,
@@ -39,17 +42,27 @@ pub enum Instruction {
 
     // Block 1
     LdR8R8(R8, R8),
+    LdR8MemHl(R8),
+    LdMemHlR8(R8),
     Halt,
 
     // Block 2
     AddAR8(R8),
+    AddAMemHl,
     AdcAR8(R8),
+    AdcAMemHl,
     SubAR8(R8),
+    SubAMemHl,
     SbcAR8(R8),
+    SbcAMemHl,
     AndAR8(R8),
+    AndAMemHl,
     XorAR8(R8),
+    XorAMemHl,
     OrAR8(R8),
+    OrAMemHl,
     CpAR8(R8),
+    CpAMemHl,
 
     // Block 3
     AddAImm8(u8),
@@ -89,17 +102,28 @@ pub enum Instruction {
     Ei,
 
     // Prefix CB
+    RlcMemHl,
     RlcR8(R8),
+    RrcMemHl,
     RrcR8(R8),
+    RlMemHl,
     RlR8(R8),
+    RrMemHl,
     RrR8(R8),
+    SlaMemHl,
     SlaR8(R8),
+    SraMemHl,
     SraR8(R8),
+    SwapMemHl,
     SwapR8(R8),
+    SrlMemHl,
     SrlR8(R8),
 
+    BitB3MemHl(B3),
     BitB3R8(B3, R8),
+    ResB3MemHl(B3),
     ResB3R8(B3, R8),
+    SetB3MemHl(B3),
     SetB3R8(B3, R8),
 }
 
@@ -168,101 +192,95 @@ impl Instruction {
 
                 2
             }
+            Instruction::IncMemHl => {
+                let address = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(address);
+                let result = value.wrapping_add(1);
+
+                memory.write_byte(address, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u8(value, 1) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+
+                3
+            }
             Instruction::IncR8(register) => {
-                match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        let value = memory.read_byte(address);
-                        let result = value.wrapping_add(1);
+                let reg = Register8::from(register);
+                let value = cpu.registers.read_8(reg);
+                let result = value.wrapping_add(1);
 
-                        memory.write_byte(address, result);
-                        cpu.registers
-                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
-                        cpu.registers.write_flag(Flag::N, 0);
-                        cpu.registers.write_flag(
-                            Flag::H,
-                            if check_half_carry_add_u8(value, 1) {
-                                1
-                            } else {
-                                0
-                            },
-                        );
-                    }
-                    _ => {
-                        let reg = Register8::from(register);
-                        let value = cpu.registers.read_8(reg);
-                        let result = value.wrapping_add(1);
-
-                        cpu.registers.write_8(reg, result);
-                        cpu.registers
-                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
-                        cpu.registers.write_flag(Flag::N, 0);
-                        cpu.registers.write_flag(
-                            Flag::H,
-                            if check_half_carry_add_u8(value, 1) {
-                                1
-                            } else {
-                                0
-                            },
-                        );
-                    }
-                }
+                cpu.registers.write_8(reg, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u8(value, 1) {
+                        1
+                    } else {
+                        0
+                    },
+                );
 
                 1
+            }
+            Instruction::DecMemHl => {
+                let address = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(address);
+                let result = value.wrapping_sub(1);
+
+                memory.write_byte(address, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_borrow_sub_u8(value, 1) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+
+                3
             }
             Instruction::DecR8(register) => {
-                match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        let value = memory.read_byte(address);
-                        let result = value.wrapping_sub(1);
+                let reg = Register8::from(register);
+                let value = cpu.registers.read_8(reg);
+                let result = value.wrapping_sub(1);
 
-                        memory.write_byte(address, result);
-                        cpu.registers
-                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
-                        cpu.registers.write_flag(Flag::N, 1);
-                        cpu.registers.write_flag(
-                            Flag::H,
-                            if check_half_borrow_sub_u8(value, 1) {
-                                1
-                            } else {
-                                0
-                            },
-                        );
-                    }
-                    _ => {
-                        let reg = Register8::from(register);
-                        let value = cpu.registers.read_8(reg);
-                        let result = value.wrapping_sub(1);
-
-                        cpu.registers.write_8(reg, result);
-                        cpu.registers
-                            .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
-                        cpu.registers.write_flag(Flag::N, 1);
-                        cpu.registers.write_flag(
-                            Flag::H,
-                            if check_half_borrow_sub_u8(value, 1) {
-                                1
-                            } else {
-                                0
-                            },
-                        );
-                    }
-                }
+                cpu.registers.write_8(reg, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_borrow_sub_u8(value, 1) {
+                        1
+                    } else {
+                        0
+                    },
+                );
 
                 1
             }
+            Instruction::LdMemHlImm8(value) => {
+                let address = cpu.registers.read_16(Register16::HL);
+                memory.write_byte(address, value);
+
+                3
+            }
             Instruction::LdR8Imm8(register, value) => {
-                match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.write_byte(address, value);
-                    }
-                    _ => {
-                        let reg = Register8::from(register);
-                        cpu.registers.write_8(reg, value);
-                    }
-                }
+                let reg = Register8::from(register);
+                cpu.registers.write_8(reg, value);
 
                 2
             }
@@ -404,38 +422,59 @@ impl Instruction {
                     2
                 }
             }
-            Instruction::Stop => todo!(), // TODO: Implement
-            Instruction::LdR8R8(target_register, source_register) => {
-                let value = match source_register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(source_register)),
-                };
+            Instruction::Stop => todo!(),
+            Instruction::LdMemHlR8(register) => {
+                let value = cpu.registers.read_8(Register8::from(register));
+                let adress = cpu.registers.read_16(Register16::HL);
 
-                match target_register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.write_byte(address, value);
-                    }
-                    _ => cpu
-                        .registers
-                        .write_8(Register8::from(target_register), value),
-                }
+                memory.write_byte(adress, value);
+
+                2
+            }
+            Instruction::LdR8MemHl(register) => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+
+                cpu.registers.write_8(Register8::from(register), value);
+
+                2
+            }
+            Instruction::LdR8R8(target_register, source_register) => {
+                let value = cpu.registers.read_8(Register8::from(source_register));
+
+                cpu.registers
+                    .write_8(Register8::from(target_register), value);
 
                 1
             }
-            Instruction::Halt => todo!(), // TODO: Implement
-            Instruction::AddAR8(register) => {
+            Instruction::Halt => todo!(),
+            Instruction::AddAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
                 let a = cpu.registers.read_8(Register8::A);
-                let value = match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(register)),
-                };
+
+                let (result, overflow) = a.overflowing_add(value);
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u8(a, value) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                2
+            }
+            Instruction::AddAR8(register) => {
+                let value = cpu.registers.read_8(Register8::from(register));
+                let a = cpu.registers.read_8(Register8::A);
 
                 let (result, overflow) = a.overflowing_add(value);
 
@@ -456,14 +495,32 @@ impl Instruction {
 
                 1
             }
+            Instruction::AdcAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+                let carry = cpu.registers.read_flag(Flag::C);
+
+                let (partial_result, overflow_add_a_carry) = a.overflowing_add(carry);
+                let (result, overflow_add_sub_result_value) = partial_result.overflowing_add(value);
+
+                let half_overflow = check_half_carry_add_u8(a, carry)
+                    || check_half_carry_add_u8(partial_result, value);
+                let overflow = overflow_add_a_carry || overflow_add_sub_result_value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers
+                    .write_flag(Flag::H, if half_overflow { 1 } else { 0 });
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                2
+            }
             Instruction::AdcAR8(register) => {
-                let value = match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(register)),
-                };
+                let value = cpu.registers.read_8(Register8::from(register));
 
                 let a = cpu.registers.read_8(Register8::A);
                 let carry = cpu.registers.read_flag(Flag::C);
@@ -483,19 +540,34 @@ impl Instruction {
                     .write_flag(Flag::H, if half_overflow { 1 } else { 0 });
                 cpu.registers
                     .write_flag(Flag::C, if overflow { 1 } else { 0 });
-                cpu.registers
-                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
 
                 1
             }
+            Instruction::SubAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+                let (result, borrow) = a.overflowing_sub(value);
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_borrow_sub_u8(a, value) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+                cpu.registers
+                    .write_flag(Flag::C, if borrow { 1 } else { 0 });
+
+                2
+            }
             Instruction::SubAR8(register) => {
-                let value = match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(register)),
-                };
+                let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
                 let (result, borrow) = a.overflowing_sub(value);
 
@@ -516,15 +588,33 @@ impl Instruction {
 
                 1
             }
+            Instruction::SbcAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+                let carry = cpu.registers.read_flag(Flag::C);
+
+                let (sub_result, borrow_sub_a_borrow) = a.overflowing_sub(carry);
+                let (result, borrow_sub_result_value) = sub_result.overflowing_sub(value);
+
+                let half_borrow = check_half_borrow_sub_u8(a, carry)
+                    || check_half_borrow_sub_u8(sub_result, value);
+                let overflow = borrow_sub_a_borrow || borrow_sub_result_value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers
+                    .write_flag(Flag::H, if half_borrow { 1 } else { 0 });
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                2
+            }
             Instruction::SbcAR8(register) => {
                 let a = cpu.registers.read_8(Register8::A);
-                let value = match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(register)),
-                };
+                let value = cpu.registers.read_8(Register8::from(register));
                 let carry = cpu.registers.read_flag(Flag::C);
 
                 let (sub_result, borrow_sub_a_borrow) = a.overflowing_sub(carry);
@@ -545,14 +635,23 @@ impl Instruction {
 
                 1
             }
+            Instruction::AndAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a & value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 1);
+
+                2
+            }
             Instruction::AndAR8(register) => {
-                let value = match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(register)),
-                };
+                let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
 
                 let result = a & value;
@@ -565,14 +664,23 @@ impl Instruction {
 
                 1
             }
+            Instruction::XorAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a ^ value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+
+                2
+            }
             Instruction::XorAR8(register) => {
-                let value = match register {
-                    R8::MemHl => {
-                        let address = cpu.registers.read_16(Register16::HL);
-                        memory.read_byte(address)
-                    }
-                    _ => cpu.registers.read_8(Register8::from(register)),
-                };
+                let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
 
                 let result = a ^ value;
@@ -585,7 +693,9 @@ impl Instruction {
 
                 1
             }
+            Instruction::OrAMemHl => todo!(),
             Instruction::OrAR8(register8) => todo!(),
+            Instruction::CpAMemHl => todo!(),
             Instruction::CpAR8(register8) => todo!(),
             Instruction::AddAImm8(_) => todo!(),
             Instruction::AdcAImm8(_) => todo!(),
@@ -617,16 +727,27 @@ impl Instruction {
             Instruction::LdSpHl => todo!(),
             Instruction::Di => todo!(),
             Instruction::Ei => todo!(),
+            Instruction::RlcMemHl => todo!(),
             Instruction::RlcR8(register8) => todo!(),
+            Instruction::RrcMemHl => todo!(),
             Instruction::RrcR8(register8) => todo!(),
+            Instruction::RlMemHl => todo!(),
             Instruction::RlR8(register8) => todo!(),
+            Instruction::RrMemHl => todo!(),
             Instruction::RrR8(register8) => todo!(),
+            Instruction::SlaMemHl => todo!(),
             Instruction::SlaR8(register8) => todo!(),
+            Instruction::SraMemHl => todo!(),
             Instruction::SraR8(register8) => todo!(),
+            Instruction::SwapMemHl => todo!(),
             Instruction::SwapR8(register8) => todo!(),
+            Instruction::SrlMemHl => todo!(),
             Instruction::SrlR8(register8) => todo!(),
+            Instruction::BitB3MemHl(b3) => todo!(),
             Instruction::BitB3R8(b3, register8) => todo!(),
+            Instruction::ResB3MemHl(b3) => todo!(),
             Instruction::ResB3R8(b3, register8) => todo!(),
+            Instruction::SetB3MemHl(b3) => todo!(),
             Instruction::SetB3R8(b3, register8) => todo!(),
         }
     }
@@ -863,20 +984,54 @@ mod tests {
     }
 
     #[test]
-    fn test_inc_r8_memhl() {
+    fn test_inc_memhl() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::IncR8(R8::MemHl);
+        let instruction = Instruction::IncMemHl;
         cpu.registers.write_16(Register16::HL, 0x1234);
         memory.write_byte(0x1234, 0x0);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
         assert_eq!(memory.read_byte(0x1234), 0x1);
+    }
+
+    #[test]
+    fn test_inc_memhl_half_overflow() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::IncMemHl;
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0xF);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(memory.read_byte(0x1234), 0x10);
+    }
+
+    #[test]
+    fn test_inc_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::IncMemHl;
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0xFF);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(memory.read_byte(0x1234), 0x00);
     }
 
     #[test]
@@ -928,6 +1083,57 @@ mod tests {
     }
 
     #[test]
+    fn test_dec_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::DecMemHl;
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x2);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(memory.read_byte(0x1234), 0x1);
+    }
+
+    #[test]
+    fn test_dec_memhl_half_borrow() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::DecMemHl;
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x10);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(memory.read_byte(0x1234), 0xF);
+    }
+
+    #[test]
+    fn test_dec_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::DecMemHl;
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(memory.read_byte(0x1234), 0x0);
+    }
+
+    #[test]
     fn test_ld_r8_imm8() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
@@ -940,15 +1146,15 @@ mod tests {
     }
 
     #[test]
-    fn test_ld_r8_imm8_memhl() {
+    fn test_ld_memhl_imm8() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::LdR8Imm8(R8::MemHl, 0xAB);
+        let instruction = Instruction::LdMemHlImm8(0xAB);
         cpu.registers.write_16(Register16::HL, 0x1234);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 2);
+        assert_eq!(cycles, 3);
         assert_eq!(memory.read_byte(0x1234), 0xAB);
     }
 
@@ -1307,32 +1513,30 @@ mod tests {
     }
 
     #[test]
-    fn test_ld_r8_r8_memhl() {
+    fn test_ld_r8_memhl() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::LdR8R8(R8::A, R8::MemHl);
+        let instruction = Instruction::LdR8MemHl(R8::A);
         cpu.registers.write_16(Register16::HL, 0x1234);
         memory.write_byte(0x1234, 0x56);
-        cpu.registers.write_8(Register8::A, 0x12);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_8(Register8::A), 0x56);
     }
 
     #[test]
-    fn test_ld_r8_r8_memhl_b() {
+    fn test_ld_memhl_r8() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::LdR8R8(R8::MemHl, R8::A);
+        let instruction = Instruction::LdMemHlR8(R8::A);
         cpu.registers.write_16(Register16::HL, 0x1234);
         cpu.registers.write_8(Register8::A, 0x56);
-        memory.write_byte(0x1234, 0x12);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 2);
         assert_eq!(memory.read_byte(0x1234), 0x56);
     }
 
@@ -1422,6 +1626,82 @@ mod tests {
     }
 
     #[test]
+    fn test_add_a_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0x12);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x34);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x46);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x00);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_memhl_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0x0F);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x10);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_a_memhl_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AddAMemHl;
+        cpu.registers.write_8(Register8::A, 0xFF);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
     fn test_adc_a_r8() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
@@ -1490,6 +1770,86 @@ mod tests {
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 1);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_adc_a_memhl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x12);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.write_flag(Flag::C, 1);
+        memory.write_byte(0x1234, 0x34);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x47);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        cpu.registers.write_flag(Flag::C, 0);
+        memory.write_byte(0x1234, 0x00);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_memhl_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x0E);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x10);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_adc_a_memhl_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AdcAMemHl;
+        cpu.registers.write_8(Register8::A, 0xFE);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
@@ -1570,21 +1930,79 @@ mod tests {
     }
 
     #[test]
-    fn test_sub_a_r8_memhl() {
+    fn test_sub_a_memhl() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::SubAR8(R8::MemHl);
+        let instruction = Instruction::SubAMemHl;
         cpu.registers.write_8(Register8::A, 0x34);
         cpu.registers.write_16(Register16::HL, 0x1234);
-        memory.write_byte(0x1234, 0x33);
+        memory.write_byte(0x1234, 0x12);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
-        assert_eq!(cpu.registers.read_8(Register8::A), 0x1);
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x22);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_sub_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::SubAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x00);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_sub_a_memhl_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::SubAMemHl;
+        cpu.registers.write_8(Register8::A, 0x10);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x0F);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_sub_a_memhl_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::SubAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0xFF);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
     }
 
     #[test]
@@ -1666,7 +2084,7 @@ mod tests {
     fn test_sbc_a_memhl() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::SbcAR8(R8::MemHl);
+        let instruction = Instruction::SbcAMemHl;
         cpu.registers.write_8(Register8::A, 0x34);
         cpu.registers.write_16(Register16::HL, 0x1234);
         memory.write_byte(0x1234, 0x32);
@@ -1674,12 +2092,72 @@ mod tests {
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_8(Register8::A), 1);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
         assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_sbc_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::SbcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x00);
+        cpu.registers.write_flag(Flag::C, 0);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x00);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_sbc_a_memhl_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::SbcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x10);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x0E);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_sbc_a_memhl_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::SbcAMemHl;
+        cpu.registers.write_8(Register8::A, 0x00);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0x01);
+        cpu.registers.write_flag(Flag::C, 1);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0xFE);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
     }
 
     #[test]
@@ -1701,7 +2179,7 @@ mod tests {
     }
 
     #[test]
-    fn test_and_a_r8_0() {
+    fn test_and_a_r8_zero() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
         let instruction = Instruction::AndAR8(R8::B);
@@ -1718,19 +2196,37 @@ mod tests {
     }
 
     #[test]
-    fn test_and_a_r8_memhl() {
+    fn test_and_a_memhl() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::AndAR8(R8::MemHl);
+        let instruction = Instruction::AndAMemHl;
         cpu.registers.write_8(Register8::A, 0b1010_1010);
         cpu.registers.write_16(Register16::HL, 0x1234);
         memory.write_byte(0x1234, 0b1100_1100);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_8(Register8::A), 0b1000_1000);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+    }
+
+    #[test]
+    fn test_and_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::AndAMemHl;
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0b0101_0101);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
     }
@@ -1771,19 +2267,38 @@ mod tests {
     }
 
     #[test]
-    fn test_xor_a_r8_memhl() {
+    fn test_xor_a_memhl() {
         let mut cpu = Cpu::new();
         let mut memory = Memory::new();
-        let instruction = Instruction::XorAR8(R8::MemHl);
+        let instruction = Instruction::XorAMemHl;
         cpu.registers.write_8(Register8::A, 0b1010_1010);
         cpu.registers.write_16(Register16::HL, 0x1234);
         memory.write_byte(0x1234, 0b1100_1100);
 
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
-        assert_eq!(cycles, 1);
+        assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_8(Register8::A), 0b0110_0110);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_xor_a_memhl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        let instruction = Instruction::XorAMemHl;
+        cpu.registers.write_8(Register8::A, 0b1010_1010);
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0b1010_1010);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
     }

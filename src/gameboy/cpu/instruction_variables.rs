@@ -5,8 +5,6 @@
 //! the different variables in the instructions, not the registers themselves
 
 /// The R8 enum is used to represent the 8-bit registers in the instructions.
-///
-/// Note: MemHl is used to represent the memory at the address in HL.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R8 {
     B,
@@ -15,7 +13,6 @@ pub enum R8 {
     E,
     H,
     L,
-    MemHl, // Memory at HL
     A,
 }
 
@@ -28,13 +25,13 @@ impl From<u8> for R8 {
             3 => R8::E,
             4 => R8::H,
             5 => R8::L,
-            6 => R8::MemHl,
             7 => R8::A,
-            _ => panic!("Invalid R8 register"),
+            _ => panic!("Invalid R8 register: {}", r),
         }
     }
 }
 
+/// The R16 Enum is used to represent the 16-bit registers in the instructions.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R16 {
     BC,
@@ -55,6 +52,7 @@ impl From<u8> for R16 {
     }
 }
 
+/// The R16STK Enum is used to represent the 16-bit reigsters for stack operations in the instructions.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R16STK {
     BC,
@@ -75,6 +73,7 @@ impl From<u8> for R16STK {
     }
 }
 
+/// R16MEM is used to represent the 16-bit registers that point to memory in the instructions.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum R16MEM {
     BC,
@@ -95,6 +94,7 @@ impl From<u8> for R16MEM {
     }
 }
 
+/// B3 is used to represent the 3-bit values in the instructions.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum B3 {
     Zero,
@@ -123,6 +123,7 @@ impl From<u8> for B3 {
     }
 }
 
+/// COND is used to represent the condition values in the instructions.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Cond {
     Zero,
@@ -143,6 +144,7 @@ impl From<u8> for Cond {
     }
 }
 
+/// TGT3 is used to represent the 3-bit target values in the instructions, used for IO.
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum TGT3 {
     Zero = 0x0,
