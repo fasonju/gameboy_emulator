@@ -192,28 +192,27 @@ impl Instruction {
 
                 2
             }
-            Instruction::IncMemHl => todo!(),
+            Instruction::IncMemHl => {
+                let address = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(address);
+                let result = value.wrapping_add(1);
+
+                memory.write_byte(address, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u8(value, 1) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+
+                3
+            }
             Instruction::IncR8(register) => {
-                // match register {
-                //     R8::MemHl => {
-                //         let address = cpu.registers.read_16(Register16::HL);
-                //         let value = memory.read_byte(address);
-                //         let result = value.wrapping_add(1);
-                //
-                //         memory.write_byte(address, result);
-                //         cpu.registers
-                //             .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
-                //         cpu.registers.write_flag(Flag::N, 0);
-                //         cpu.registers.write_flag(
-                //             Flag::H,
-                //             if check_half_carry_add_u8(value, 1) {
-                //                 1
-                //             } else {
-                //                 0
-                //             },
-                //         );
-                //     }
-                //     _ => {
                 let reg = Register8::from(register);
                 let value = cpu.registers.read_8(reg);
                 let result = value.wrapping_add(1);
@@ -233,27 +232,27 @@ impl Instruction {
 
                 1
             }
-            Instruction::DecMemHl => todo!(),
+            Instruction::DecMemHl => {
+                let address = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(address);
+                let result = value.wrapping_sub(1);
+
+                memory.write_byte(address, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_borrow_sub_u8(value, 1) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+
+                3
+            }
             Instruction::DecR8(register) => {
-                // match register {
-                //     R8::MemHl => {
-                //         let address = cpu.registers.read_16(Register16::HL);
-                //         let value = memory.read_byte(address);
-                //         let result = value.wrapping_sub(1);
-                //
-                //         memory.write_byte(address, result);
-                //         cpu.registers
-                //             .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
-                //         cpu.registers.write_flag(Flag::N, 1);
-                //         cpu.registers.write_flag(
-                //             Flag::H,
-                //             if check_half_borrow_sub_u8(value, 1) {
-                //                 1
-                //             } else {
-                //                 0
-                //             },
-                //         );
-                //     }
                 let reg = Register8::from(register);
                 let value = cpu.registers.read_8(reg);
                 let result = value.wrapping_sub(1);
@@ -273,14 +272,13 @@ impl Instruction {
 
                 1
             }
-            Instruction::LdMemHlImm8(value) => todo!(),
+            Instruction::LdMemHlImm8(value) => {
+                let address = cpu.registers.read_16(Register16::HL);
+                memory.write_byte(address, value);
+
+                3
+            }
             Instruction::LdR8Imm8(register, value) => {
-                // match register {
-                //     R8::MemHl => {
-                //         let address = cpu.registers.read_16(Register16::HL);
-                //         memory.write_byte(address, value);
-                //     }
-                //     _ => {
                 let reg = Register8::from(register);
                 cpu.registers.write_8(reg, value);
 
@@ -425,8 +423,22 @@ impl Instruction {
                 }
             }
             Instruction::Stop => todo!(),
-            Instruction::LdMemHlR8(register) => todo!(),
-            Instruction::LdR8MemHl(register) => todo!(),
+            Instruction::LdMemHlR8(register) => {
+                let value = cpu.registers.read_8(Register8::from(register));
+                let adress = cpu.registers.read_16(Register16::HL);
+
+                memory.write_byte(adress, value);
+
+                2
+            }
+            Instruction::LdR8MemHl(register) => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+
+                cpu.registers.write_8(Register8::from(register), value);
+
+                2
+            }
             Instruction::LdR8R8(target_register, source_register) => {
                 let value = cpu.registers.read_8(Register8::from(source_register));
 
@@ -436,7 +448,30 @@ impl Instruction {
                 1
             }
             Instruction::Halt => todo!(),
-            Instruction::AddAMemHl => todo!(),
+            Instruction::AddAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+
+                let (result, overflow) = a.overflowing_add(value);
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_carry_add_u8(a, value) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                2
+            }
             Instruction::AddAR8(register) => {
                 let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
@@ -460,7 +495,30 @@ impl Instruction {
 
                 1
             }
-            Instruction::AdcAMemHl => todo!(),
+            Instruction::AdcAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+                let carry = cpu.registers.read_flag(Flag::C);
+
+                let (partial_result, overflow_add_a_carry) = a.overflowing_add(carry);
+                let (result, overflow_add_sub_result_value) = partial_result.overflowing_add(value);
+
+                let half_overflow = check_half_carry_add_u8(a, carry)
+                    || check_half_carry_add_u8(partial_result, value);
+                let overflow = overflow_add_a_carry || overflow_add_sub_result_value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers
+                    .write_flag(Flag::H, if half_overflow { 1 } else { 0 });
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                2
+            }
             Instruction::AdcAR8(register) => {
                 let value = cpu.registers.read_8(Register8::from(register));
 
@@ -482,12 +540,32 @@ impl Instruction {
                     .write_flag(Flag::H, if half_overflow { 1 } else { 0 });
                 cpu.registers
                     .write_flag(Flag::C, if overflow { 1 } else { 0 });
-                cpu.registers
-                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
 
                 1
             }
-            Instruction::SubAMemHl => todo!(),
+            Instruction::SubAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+                let (result, borrow) = a.overflowing_sub(value);
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers.write_flag(
+                    Flag::H,
+                    if check_half_borrow_sub_u8(a, value) {
+                        1
+                    } else {
+                        0
+                    },
+                );
+                cpu.registers
+                    .write_flag(Flag::C, if borrow { 1 } else { 0 });
+
+                2
+            }
             Instruction::SubAR8(register) => {
                 let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
@@ -510,7 +588,30 @@ impl Instruction {
 
                 1
             }
-            Instruction::SbcAMemHl => todo!(),
+            Instruction::SbcAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+                let carry = cpu.registers.read_flag(Flag::C);
+
+                let (sub_result, borrow_sub_a_borrow) = a.overflowing_sub(carry);
+                let (result, borrow_sub_result_value) = sub_result.overflowing_sub(value);
+
+                let half_borrow = check_half_borrow_sub_u8(a, carry)
+                    || check_half_borrow_sub_u8(sub_result, value);
+                let overflow = borrow_sub_a_borrow || borrow_sub_result_value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 1);
+                cpu.registers
+                    .write_flag(Flag::H, if half_borrow { 1 } else { 0 });
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                2
+            }
             Instruction::SbcAR8(register) => {
                 let a = cpu.registers.read_8(Register8::A);
                 let value = cpu.registers.read_8(Register8::from(register));
@@ -534,7 +635,21 @@ impl Instruction {
 
                 1
             }
-            Instruction::AndAMemHl => todo!(),
+            Instruction::AndAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a & value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 1);
+
+                2
+            }
             Instruction::AndAR8(register) => {
                 let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
@@ -549,7 +664,21 @@ impl Instruction {
 
                 1
             }
-            Instruction::XorAMemHl => todo!(),
+            Instruction::XorAMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+                let a = cpu.registers.read_8(Register8::A);
+
+                let result = a ^ value;
+
+                cpu.registers.write_8(Register8::A, result);
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+
+                2
+            }
             Instruction::XorAR8(register) => {
                 let value = cpu.registers.read_8(Register8::from(register));
                 let a = cpu.registers.read_8(Register8::A);
@@ -2024,7 +2153,7 @@ mod tests {
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 2);
-        assert_eq!(cpu.registers.read_8(Register8::A), 0xFF);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0xFE);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 1);
         assert_eq!(cpu.registers.read_flag(Flag::H), 1);
