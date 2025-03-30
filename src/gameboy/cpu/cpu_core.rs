@@ -143,7 +143,7 @@ impl Cpu {
 
             ((0x3, 0x0, 0xB), _, _) => map_prefixed_instruction(self.fetch_byte(memory)), // CB
 
-            ((0x3, 0x2, 0x2), _, _) => Instruction::LdMemCA, // LD (C), A
+            ((0x3, 0x2, 0x2), _, _) => Instruction::LdhMemCA, // LD (C), A
             ((0x3, 0x2, 0x0), _, _) => Instruction::LdhMemImm8A(self.fetch_byte(memory)), // LDH (imm8), A
             ((0x3, 0x2, 0xA), _, _) => Instruction::LdMemImm16A(self.fetch_word(memory)), // LD (imm16), A
             ((0x3, 0x3, 0x2), _, _) => Instruction::LdAMemC, // LD A, (C)
@@ -587,7 +587,7 @@ mod tests {
         );
 
         memory.write_byte(132, 0xE2);
-        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdMemCA);
+        assert_eq!(cpu.fetch_instruction(&memory), Instruction::LdhMemCA);
 
         memory.write_byte(133, 0xE0);
         memory.write_byte(134, 0x12);
