@@ -1045,8 +1045,21 @@ impl Instruction {
 
                 2
             }
-            Instruction::LdhAMemImm8(_) => todo!(),
-            Instruction::LdAMemImm16(_) => todo!(),
+            Instruction::LdhAMemImm8(offset) => {
+                let adress = 0xFF00 + u16::from(offset);
+                let value = memory.read_byte(adress);
+
+                cpu.registers.write_8(Register8::A, value);
+
+                3
+            }
+            Instruction::LdAMemImm16(adress) => {
+                let value = memory.read_byte(adress);
+
+                cpu.registers.write_8(Register8::A, value);
+
+                4
+            }
             Instruction::AddSpImm8(_) => todo!(),
             Instruction::LdHlSpImm8(_) => todo!(),
             Instruction::LdSpHl => todo!(),
@@ -3604,6 +3617,32 @@ mod tests {
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x42);
+    }
+
+    #[test]
+    fn test_ldh_a_mem_imm8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        memory.write_byte(0xFF01, 0x42);
+        let instruction = Instruction::LdhAMemImm8(0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x42);
+    }
+
+    #[test]
+    fn test_ld_a_mem_imm16() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        memory.write_byte(0x1234, 0x42);
+        let instruction = Instruction::LdAMemImm16(0x1234);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
         assert_eq!(cpu.registers.read_8(Register8::A), 0x42);
     }
 }
