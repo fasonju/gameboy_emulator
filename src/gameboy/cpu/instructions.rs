@@ -1031,7 +1031,12 @@ impl Instruction {
 
                 3
             }
-            Instruction::LdMemImm16A(_) => todo!(),
+            Instruction::LdMemImm16A(adress) => {
+                let value = cpu.registers.read_8(Register8::A);
+                memory.write_byte(adress, value);
+
+                4
+            }
             Instruction::LdAMemC => todo!(),
             Instruction::LdhAMemImm8(_) => todo!(),
             Instruction::LdAMemImm16(_) => todo!(),
@@ -3566,5 +3571,18 @@ mod tests {
 
         assert_eq!(cycles, 3);
         assert_eq!(memory.read_byte(0xFF01), 0x42);
+    }
+
+    #[test]
+    fn test_ld_mem_imm16_a() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_8(Register8::A, 0x42);
+        let instruction = Instruction::LdMemImm16A(0x1234);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(memory.read_byte(0x1234), 0x42);
     }
 }
