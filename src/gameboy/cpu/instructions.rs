@@ -1103,6 +1103,56 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_stack_push16() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+
+        cpu.registers.write_16(Register16::SP, 0xFFFE);
+        stack_push_16(&mut cpu, &mut memory, 0xABCD);
+
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0xFFFC);
+        assert_eq!(memory.read_word(0xFFFC), 0xABCD);
+    }
+
+    #[test]
+    fn test_stack_pop16() {
+        let mut cpu = Cpu::new();
+        let memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0xFFFC);
+        memory.write_word(0xFFFC, 0xABCD);
+
+        let result = stack_pop_16(&mut cpu, &memory);
+
+        assert_eq!(result, 0xABCD);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0xFFFE);
+    }
+
+    #[test]
+    fn test_stack_push8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+
+        cpu.registers.write_16(Register16::SP, 0xFFFE);
+        stack_push_8(&mut cpu, &mut memory, 0xAB);
+
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0xFFFD);
+        assert_eq!(memory.read_byte(0xFFFD), 0xAB);
+    }
+
+    #[test]
+    fn test_stack_pop8() {
+        let mut cpu = Cpu::new();
+        let memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0xFFFD);
+        memory.write_byte(0xFFFD, 0xAB);
+
+        let result = stack_pop_8(&mut cpu, &memory);
+
+        assert_eq!(result, 0xAB);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0xFFFE);
+    }
+
+    #[test]
     fn test_check_half_carry_add_u8() {
         assert!(check_half_carry_add_u8(0x0F, 0x01));
         assert!(check_half_carry_add_u8(0x0F, 0x0F));
