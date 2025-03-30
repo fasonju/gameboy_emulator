@@ -1005,14 +1005,18 @@ impl Instruction {
 
                 4
             }
-            Instruction::PopR16Stk(register16_stk) => {
+            Instruction::PopR16Stk(register) => {
                 let value = stack_pop_16(cpu, memory);
-                cpu.registers
-                    .write_16(Register16::from(register16_stk), value);
+                cpu.registers.write_16(Register16::from(register), value);
 
                 3
             }
-            Instruction::PushR16Stk(register16_stk) => todo!(),
+            Instruction::PushR16Stk(register) => {
+                let value = cpu.registers.read_16(Register16::from(register));
+                stack_push_16(cpu, memory, value);
+
+                4
+            }
             Instruction::LdMemCA => todo!(),
             Instruction::LdhMemImm8A(_) => todo!(),
             Instruction::LdMemImm16A(_) => todo!(),
@@ -3503,11 +3507,25 @@ mod tests {
         cpu.registers.write_16(Register16::SP, 0x1234);
         memory.write_word(0x1234, 0x5678);
         let instruction = Instruction::PopR16Stk(R16STK::BC);
-
         let cycles = instruction.execute(&mut cpu, &mut memory);
 
         assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_16(Register16::BC), 0x5678);
         assert_eq!(cpu.registers.read_16(Register16::SP), 0x1236);
+    }
+
+    #[test]
+    fn test_push_r16stk() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        cpu.registers.write_16(Register16::BC, 0x5678);
+        let instruction = Instruction::PushR16Stk(R16STK::BC);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1232);
+        assert_eq!(memory.read_word(0x1232), 0x5678);
     }
 }
