@@ -998,7 +998,13 @@ impl Instruction {
 
                 6
             }
-            Instruction::RstTgt3(b3) => todo!(),
+            Instruction::RstTgt3(tgt) => {
+                let adress = tgt as u16;
+                stack_push_16(cpu, memory, cpu.registers.pc);
+                cpu.registers.pc = adress;
+
+                4
+            }
             Instruction::PopR16Stk(register16_stk) => todo!(),
             Instruction::PushR16Stk(register16_stk) => todo!(),
             Instruction::LdMemCA => todo!(),
@@ -3417,5 +3423,20 @@ mod tests {
         assert_eq!(cycles, 3);
         assert_eq!(cpu.registers.read_16(Register16::SP), 0x1234);
         assert_eq!(cpu.registers.read_16(Register16::PC), 0x4321);
+    }
+
+    #[test]
+    fn test_rst_tgt3() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::RstTgt3(TGT3::Zero);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1232);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x0);
     }
 }
