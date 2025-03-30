@@ -956,12 +956,12 @@ impl Instruction {
                     return 3;
                 }
 
-                cpu.registers.write_16(Register16::PC, location);
+                cpu.registers.pc = location;
 
                 4
             }
             Instruction::JpImm16(location) => {
-                cpu.registers.write_16(Register16::PC, location);
+                cpu.registers.pc = location;
 
                 4
             }
@@ -972,8 +972,32 @@ impl Instruction {
 
                 1
             }
-            Instruction::CallCondImm16(condition, location) => todo!(),
-            Instruction::CallImm16(_) => todo!(),
+            Instruction::CallCondImm16(condition, location) => {
+                let call = match condition {
+                    Cond::Zero => cpu.registers.read_flag(Flag::Z) == 0x1,
+                    Cond::NotZero => cpu.registers.read_flag(Flag::Z) == 0x0,
+                    Cond::Carry => cpu.registers.read_flag(Flag::C) == 0x1,
+                    Cond::NotCarry => cpu.registers.read_flag(Flag::C) == 0x0,
+                };
+
+                if !call {
+                    return 3;
+                }
+
+                let current_adress = cpu.registers.read_16(Register16::PC);
+                stack_push_16(cpu, memory, current_adress);
+
+                cpu.registers.pc = location;
+
+                6
+            }
+            Instruction::CallImm16(location) => {
+                let current_adress = cpu.registers.read_16(Register16::PC);
+                stack_push_16(cpu, memory, current_adress);
+                cpu.registers.pc = location;
+
+                6
+            }
             Instruction::RstTgt3(b3) => todo!(),
             Instruction::PopR16Stk(register16_stk) => todo!(),
             Instruction::PushR16Stk(register16_stk) => todo!(),
@@ -3342,5 +3366,56 @@ mod tests {
 
         assert_eq!(cycles, 1);
         assert_eq!(cpu.registers.read_16(Register16::PC), 0x1234);
+    }
+
+    #[test]
+    fn test_call_imm16() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::CallImm16(0x5678);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 6);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1232);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x5678);
+        assert_eq!(memory.read_byte(0x1232), 0x21);
+        assert_eq!(memory.read_byte(0x1233), 0x43);
+    }
+
+    #[test]
+    fn test_call_cond_imm16_taken() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_flag(Flag::Z, 1);
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::CallCondImm16(Cond::Zero, 0x5678);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 6);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1232);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x5678);
+        assert_eq!(memory.read_byte(0x1232), 0x21);
+        assert_eq!(memory.read_byte(0x1233), 0x43);
+    }
+
+    #[test]
+    fn test_call_cond_imm16_untaken() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_flag(Flag::Z, 0);
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        cpu.registers.pc = 0x4321;
+        let instruction = Instruction::CallCondImm16(Cond::Zero, 0x5678);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1234);
+        assert_eq!(cpu.registers.read_16(Register16::PC), 0x4321);
     }
 }
