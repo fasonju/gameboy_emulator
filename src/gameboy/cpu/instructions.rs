@@ -184,7 +184,7 @@ impl Instruction {
                 cpu.registers.write_flag(Flag::N, 0);
                 cpu.registers.write_flag(
                     Flag::H,
-                    if check_half_carry_add_u16(hl, value) {
+                    if check_half_carry_add_u16_bit11(hl, value) {
                         1
                     } else {
                         0
@@ -1060,7 +1060,40 @@ impl Instruction {
 
                 4
             }
-            Instruction::AddSpImm8(_) => todo!(),
+            Instruction::AddSpImm8(byte) => {
+                // TODO: Double check this implementation
+                let sp = cpu.registers.read_16(Register16::SP);
+                let operand = byte as i8 as i16;
+                let (result, overflow) = sp.overflowing_add_signed(operand);
+
+                cpu.registers.write_16(Register16::SP, result);
+                cpu.registers.write_flag(Flag::Z, 0);
+                cpu.registers.write_flag(Flag::N, 0);
+                if operand > 0 {
+                    println!(
+                        "half carry: {}, {:X}  +  {:X} = {:X}",
+                        check_half_carry_add_u16_bit11(sp, operand as u16),
+                        sp,
+                        operand,
+                        result
+                    );
+                    cpu.registers.write_flag(
+                        Flag::H,
+                        if check_half_carry_add_u16_bit7(sp, operand as u16) {
+                            1
+                        } else {
+                            0
+                        },
+                    );
+                    cpu.registers
+                        .write_flag(Flag::C, if overflow { 1 } else { 0 });
+                } else {
+                    cpu.registers.write_flag(Flag::H, 0);
+                    cpu.registers.write_flag(Flag::C, 0);
+                }
+
+                4
+            }
             Instruction::LdHlSpImm8(_) => todo!(),
             Instruction::LdSpHl => todo!(),
             Instruction::Di => todo!(),
@@ -1132,8 +1165,12 @@ fn check_half_carry_add_u8(left: u8, right: u8) -> bool {
     (((left & 0xF) + (right & 0xF)) & 0x10) != 0x0
 }
 
-fn check_half_carry_add_u16(left: u16, right: u16) -> bool {
+fn check_half_carry_add_u16_bit11(left: u16, right: u16) -> bool {
     (((left & 0xFFF) + (right & 0xFFF)) & 0x1000) != 0x0
+}
+
+fn check_half_carry_add_u16_bit7(left: u16, right: u16) -> bool {
+    (((left & 0xFF) + (right & 0xFF)) & 0x100) != 0x0
 }
 
 fn check_half_borrow_sub_u8(left: u8, right: u8) -> bool {
@@ -1208,11 +1245,19 @@ mod tests {
     }
 
     #[test]
-    fn test_check_half_carry_add_u16() {
-        assert!(check_half_carry_add_u16(0x0FFF, 0x0001));
-        assert!(check_half_carry_add_u16(0x0FFF, 0x0FFF));
-        assert!(!check_half_carry_add_u16(0x0FFF, 0x0000));
-        assert!(!check_half_carry_add_u16(0x0000, 0x0000));
+    fn test_check_half_carry_add_u16_bit11() {
+        assert!(check_half_carry_add_u16_bit11(0x0FFF, 0x0001));
+        assert!(check_half_carry_add_u16_bit11(0x0FFF, 0x0FFF));
+        assert!(!check_half_carry_add_u16_bit11(0x0FFF, 0x0000));
+        assert!(!check_half_carry_add_u16_bit11(0x0000, 0x0000));
+    }
+
+    #[test]
+    fn test_check_half_carry_add_u16_bit7() {
+        assert!(check_half_carry_add_u16_bit7(0x00FF, 0x0001));
+        assert!(check_half_carry_add_u16_bit7(0x00FF, 0x00FF));
+        assert!(!check_half_carry_add_u16_bit7(0x00FF, 0x0000));
+        assert!(!check_half_carry_add_u16_bit7(0x0000, 0x0000));
     }
 
     #[test]
@@ -3644,5 +3689,73 @@ mod tests {
 
         assert_eq!(cycles, 4);
         assert_eq!(cpu.registers.read_8(Register8::A), 0x42);
+    }
+
+    #[test]
+    fn test_add_sp_imm8_positive() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        let instruction = Instruction::AddSpImm8(0x02);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1236);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_sp_imm8_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x12FF);
+        let instruction = Instruction::AddSpImm8(0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1300);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_add_sp_imm8_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0xFFFF);
+        let instruction = Instruction::AddSpImm8(0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x0000);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_add_sp_imm8_negative() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        let instruction = Instruction::AddSpImm8(-1i8 as u8);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1233);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
     }
 }
