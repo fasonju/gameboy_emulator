@@ -1037,7 +1037,14 @@ impl Instruction {
 
                 4
             }
-            Instruction::LdAMemC => todo!(),
+            Instruction::LdAMemC => {
+                let address = 0xFF00 + u16::from(cpu.registers.read_8(Register8::C));
+                let value = memory.read_byte(address);
+
+                cpu.registers.write_8(Register8::A, value);
+
+                2
+            }
             Instruction::LdhAMemImm8(_) => todo!(),
             Instruction::LdAMemImm16(_) => todo!(),
             Instruction::AddSpImm8(_) => todo!(),
@@ -3584,5 +3591,19 @@ mod tests {
 
         assert_eq!(cycles, 4);
         assert_eq!(memory.read_byte(0x1234), 0x42);
+    }
+
+    #[test]
+    fn test_ld_a_mem_c() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_8(Register8::C, 0x01);
+        memory.write_byte(0xFF01, 0x42);
+        let instruction = Instruction::LdAMemC;
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::A), 0x42);
     }
 }
