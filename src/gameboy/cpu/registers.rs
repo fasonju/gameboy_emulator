@@ -5,7 +5,7 @@
 
 use crate::utils::{get_bit_u16, get_hi, get_lo, set_bit_u16, set_hi, set_lo};
 
-use super::instruction_variables::{R16, R16MEM, R8};
+use super::instruction_variables::{R16, R16MEM, R16STK, R8};
 
 /// 16 bit register for reading and writing
 #[derive(Debug, Copy, Clone)]
@@ -36,6 +36,17 @@ impl From<R16MEM> for Register16 {
             R16MEM::DE => Register16::DE,
             R16MEM::Hli => Register16::HL,
             R16MEM::Hld => Register16::HL,
+        }
+    }
+}
+
+impl From<R16STK> for Register16 {
+    fn from(register: R16STK) -> Self {
+        match register {
+            R16STK::BC => Register16::BC,
+            R16STK::DE => Register16::DE,
+            R16STK::HL => Register16::HL,
+            R16STK::AF => Register16::AF,
         }
     }
 }
