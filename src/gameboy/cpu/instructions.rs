@@ -1094,7 +1094,22 @@ impl Instruction {
 
                 4
             }
-            Instruction::LdHlSpImm8(_) => todo!(),
+            Instruction::LdHlSpImm8(byte) => {
+                let sp = cpu.registers.read_16(Register16::SP);
+                let operand = byte as i8 as i16;
+                let (result, overflow) = sp.overflowing_add_signed(operand);
+                let half_carry = operand > 0 && check_half_carry_add_u16_bit7(sp, operand as u16);
+
+                cpu.registers.write_16(Register16::HL, result);
+                cpu.registers.write_flag(Flag::Z, 0);
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers
+                    .write_flag(Flag::H, if half_carry { 1 } else { 0 });
+                cpu.registers
+                    .write_flag(Flag::C, if overflow { 1 } else { 0 });
+
+                3
+            }
             Instruction::LdSpHl => todo!(),
             Instruction::Di => todo!(),
             Instruction::Ei => todo!(),
@@ -3753,6 +3768,74 @@ mod tests {
 
         assert_eq!(cycles, 4);
         assert_eq!(cpu.registers.read_16(Register16::SP), 0x1233);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_ld_hl_sp_imm8_positive() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        let instruction = Instruction::LdHlSpImm8(0x02);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::HL), 0x1236);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_ld_hl_sp_imm8_half_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x12FF);
+        let instruction = Instruction::LdHlSpImm8(0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::HL), 0x1300);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_ld_hl_sp_imm8_carry() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0xFFFF);
+        let instruction = Instruction::LdHlSpImm8(0x01);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::HL), 0x0000);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 1);
+    }
+
+    #[test]
+    fn test_ld_hl_sp_imm8_negative() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::SP, 0x1234);
+        let instruction = Instruction::LdHlSpImm8(-1i8 as u8);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 3);
+        assert_eq!(cpu.registers.read_16(Register16::HL), 0x1233);
         assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
