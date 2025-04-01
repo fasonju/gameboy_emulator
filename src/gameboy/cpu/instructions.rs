@@ -1110,7 +1110,12 @@ impl Instruction {
 
                 3
             }
-            Instruction::LdSpHl => todo!(),
+            Instruction::LdSpHl => {
+                let value = cpu.registers.read_16(Register16::HL);
+                cpu.registers.write_16(Register16::SP, value);
+
+                2
+            }
             Instruction::Di => todo!(),
             Instruction::Ei => todo!(),
             Instruction::RlcMemHl => todo!(),
@@ -3840,5 +3845,18 @@ mod tests {
         assert_eq!(cpu.registers.read_flag(Flag::N), 0);
         assert_eq!(cpu.registers.read_flag(Flag::H), 0);
         assert_eq!(cpu.registers.read_flag(Flag::C), 0);
+    }
+
+    #[test]
+    fn test_ld_sp_hl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        let instruction = Instruction::LdSpHl;
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_16(Register16::SP), 0x1234);
     }
 }
