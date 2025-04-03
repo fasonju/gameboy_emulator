@@ -289,57 +289,49 @@ impl Instruction {
             }
             Instruction::Rlca => {
                 let value = cpu.registers.read_8(Register8::A);
-                let carry = get_bit_u8(value, 7);
-                let result = (value << 1) | carry;
+
+                let result = rotate_left_carry(cpu, value);
 
                 cpu.registers.write_8(Register8::A, result);
                 cpu.registers.write_flag(Flag::Z, 0);
                 cpu.registers.write_flag(Flag::N, 0);
                 cpu.registers.write_flag(Flag::H, 0);
-                cpu.registers.write_flag(Flag::C, carry);
 
                 1
             }
             Instruction::Rrca => {
                 let value = cpu.registers.read_8(Register8::A);
-                let carry = get_bit_u8(value, 0);
-                let result = (value >> 1) | (carry << 7);
+
+                let result = rotate_right_carry(cpu, value);
 
                 cpu.registers.write_8(Register8::A, result);
                 cpu.registers.write_flag(Flag::Z, 0);
                 cpu.registers.write_flag(Flag::N, 0);
                 cpu.registers.write_flag(Flag::H, 0);
-                cpu.registers.write_flag(Flag::C, carry);
 
                 1
             }
             Instruction::Rla => {
                 let value = cpu.registers.read_8(Register8::A);
-                let carry = cpu.registers.read_flag(Flag::C);
 
-                let result = (value << 1) | carry;
-                let new_carry = get_bit_u8(value, 7);
+                let result = rotate_left(cpu, value);
 
                 cpu.registers.write_8(Register8::A, result);
                 cpu.registers.write_flag(Flag::Z, 0);
                 cpu.registers.write_flag(Flag::N, 0);
                 cpu.registers.write_flag(Flag::H, 0);
-                cpu.registers.write_flag(Flag::C, new_carry);
 
                 1
             }
             Instruction::Rra => {
                 let value = cpu.registers.read_8(Register8::A);
-                let carry = cpu.registers.read_flag(Flag::C);
 
-                let result = (value >> 1) | (carry << 7);
-                let new_carry = get_bit_u8(value, 0);
+                let result = rotate_right(cpu, value);
 
                 cpu.registers.write_8(Register8::A, result);
                 cpu.registers.write_flag(Flag::Z, 0);
                 cpu.registers.write_flag(Flag::N, 0);
                 cpu.registers.write_flag(Flag::H, 0);
-                cpu.registers.write_flag(Flag::C, new_carry);
 
                 1
             }
@@ -1118,8 +1110,36 @@ impl Instruction {
             }
             Instruction::Di => todo!(),
             Instruction::Ei => todo!(),
-            Instruction::RlcMemHl => todo!(),
-            Instruction::RlcR8(register8) => todo!(),
+            Instruction::RlcMemHl => {
+                let adress = cpu.registers.read_16(Register16::HL);
+                let value = memory.read_byte(adress);
+
+                let result = rotate_left_carry(cpu, value);
+
+                memory.write_byte(adress, result);
+
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+
+                4
+            }
+            Instruction::RlcR8(register) => {
+                let reg = Register8::from(register);
+                let value = cpu.registers.read_8(reg);
+
+                let result = rotate_left_carry(cpu, value);
+
+                cpu.registers.write_8(reg, result);
+
+                cpu.registers
+                    .write_flag(Flag::Z, if result == 0 { 1 } else { 0 });
+                cpu.registers.write_flag(Flag::N, 0);
+                cpu.registers.write_flag(Flag::H, 0);
+
+                2
+            }
             Instruction::RrcMemHl => todo!(),
             Instruction::RrcR8(register8) => todo!(),
             Instruction::RlMemHl => todo!(),
@@ -1179,6 +1199,34 @@ fn stack_pop_8(cpu: &mut Cpu, memory: &Memory) -> u8 {
     value
 }
 
+/// Rotate left through carry, return rotated value. set carry flag to wrapped bit
+fn rotate_left(cpu: &mut Cpu, value: u8) -> u8 {
+    let carry = cpu.registers.read_flag(Flag::C);
+    cpu.registers.write_flag(Flag::C, (value >> 7) & 0x1);
+    (value << 1) | carry
+}
+
+/// Rotate right through carry, return rotated value. set carry to rotated bit
+fn rotate_right(cpu: &mut Cpu, value: u8) -> u8 {
+    let carry = cpu.registers.read_flag(Flag::C);
+    cpu.registers.write_flag(Flag::C, value & 0x1);
+    (value >> 1) | (carry << 0x7)
+}
+
+/// Rotate left wrapping, set carry flag to wrapped bit
+fn rotate_left_carry(cpu: &mut Cpu, value: u8) -> u8 {
+    cpu.registers.write_flag(Flag::C, (value >> 7) & 0x1);
+
+    value.rotate_left(1)
+}
+
+/// Rotate right wrapping, set carry flag to wrapped bit
+fn rotate_right_carry(cpu: &mut Cpu, value: u8) -> u8 {
+    cpu.registers.write_flag(Flag::C, value & 0x1);
+
+    value.rotate_right(1)
+}
+
 // utils
 
 fn check_half_carry_add_u8(left: u8, right: u8) -> bool {
@@ -1205,6 +1253,50 @@ fn check_half_borrow_sub_u16(left: u16, right: u16) -> bool {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn test_rotate_left() {
+        let mut cpu = Cpu::new();
+        cpu.registers.write_flag(Flag::C, 0x1);
+
+        let result = rotate_left(&mut cpu, 0b10101010);
+
+        assert_eq!(result, 0b01010101);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x1);
+    }
+
+    #[test]
+    fn test_rotate_right() {
+        let mut cpu = Cpu::new();
+        cpu.registers.write_flag(Flag::C, 0x1);
+
+        let result = rotate_right(&mut cpu, 0b10101010);
+
+        assert_eq!(result, 0b11010101);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x0);
+    }
+
+    #[test]
+    fn test_rotate_left_carry() {
+        let mut cpu = Cpu::new();
+        cpu.registers.write_flag(Flag::C, 0x1);
+
+        let result = rotate_left_carry(&mut cpu, 0b10101010);
+
+        assert_eq!(result, 0b01010101);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x1);
+    }
+
+    #[test]
+    fn test_rotate_right_carry() {
+        let mut cpu = Cpu::new();
+        cpu.registers.write_flag(Flag::C, 0x1);
+
+        let result = rotate_right_carry(&mut cpu, 0b10101010);
+
+        assert_eq!(result, 0b01010101);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x0);
+    }
 
     #[test]
     fn test_stack_push16() {
@@ -3858,5 +3950,75 @@ mod tests {
 
         assert_eq!(cycles, 2);
         assert_eq!(cpu.registers.read_16(Register16::SP), 0x1234);
+    }
+
+    #[test]
+    fn test_rlc_mem_hl() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0b1010_1010);
+        let instruction = Instruction::RlcMemHl;
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(memory.read_byte(0x1234), 0b0101_0101);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x1);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+    }
+
+    #[test]
+    fn test_rlc_mem_hl_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_16(Register16::HL, 0x1234);
+        memory.write_byte(0x1234, 0b0000_0000);
+        let instruction = Instruction::RlcMemHl;
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(memory.read_byte(0x1234), 0b0000_0000);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+    }
+
+    #[test]
+    fn test_rlc_r8() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_8(Register8::B, 0b1010_1010);
+        let instruction = Instruction::RlcR8(R8::B);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::B), 0b0101_0101);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x1);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
+    }
+
+    #[test]
+    fn test_rlc_r8_zero() {
+        let mut cpu = Cpu::new();
+        let mut memory = Memory::new();
+        cpu.registers.write_8(Register8::B, 0b0000_0000);
+        let instruction = Instruction::RlcR8(R8::B);
+
+        let cycles = instruction.execute(&mut cpu, &mut memory);
+
+        assert_eq!(cycles, 2);
+        assert_eq!(cpu.registers.read_8(Register8::B), 0b0000_0000);
+        assert_eq!(cpu.registers.read_flag(Flag::C), 0x0);
+        assert_eq!(cpu.registers.read_flag(Flag::Z), 1);
+        assert_eq!(cpu.registers.read_flag(Flag::N), 0);
+        assert_eq!(cpu.registers.read_flag(Flag::H), 0);
     }
 }
